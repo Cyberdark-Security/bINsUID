@@ -49,6 +49,31 @@ cd bINsUID
 pip install --break-system-packages .
 ```
 
+### Docker / minimal lab (no git, no pipx)
+
+Many CTF and privesc lab containers only ship `python3` and `curl`. One-liner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash
+```
+
+Manual steps if you prefer:
+
+```bash
+curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz -o /tmp/binsuid.tgz
+tar xzf /tmp/binsuid.tgz -C /tmp
+python3 -m venv ~/.local/venvs/binsuid
+~/.local/venvs/binsuid/bin/pip install /tmp/bINsUID-main
+export PATH="$HOME/.local/venvs/binsuid/bin:$PATH"
+binsuid -V
+```
+
+If `python3 -m venv` fails, install packages first (when you have sudo):
+
+```bash
+sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl
+```
+
 ### Other Linux
 
 ```bash
