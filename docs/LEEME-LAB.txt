@@ -1,0 +1,64 @@
+================================================================================
+  LABORATORIO DE ESCALADA DE PRIVILEGIOS — bINsUID
+================================================================================
+
+Objetivo: obtener root en esta máquina usando bINsUID.
+La herramienta detecta el entorno, escanea SUID / capabilities / sudo,
+muestra el objetivo del lab y puede escalar automáticamente.
+
+--------------------------------------------------------------------------------
+PASO 1 — Instalar (copiar y pegar una sola vez)
+--------------------------------------------------------------------------------
+
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
+source ~/.bashrc
+
+(No necesitas git, pip ni sudo. Solo Python 3 y curl.)
+
+--------------------------------------------------------------------------------
+PASO 2 — Escanear (ver qué hay en el sistema)
+--------------------------------------------------------------------------------
+
+binsuid --scan-only
+
+Verás:
+  - Objetivos prioritarios del lab (marcados con >>>)
+  - SUID, capabilities o sudo explotables
+  - Los binarios normales del sistema quedan ocultos (ruido)
+
+--------------------------------------------------------------------------------
+PASO 3 — Escalar a root
+--------------------------------------------------------------------------------
+
+Opción A — Guiado (recomendado la primera vez):
+
+  binsuid
+
+  La herramienta muestra el objetivo y pregunta si quieres escalar. Pulsa Y.
+
+Opción B — Automático directo:
+
+  binsuid --auto -y
+
+Opción C — Solo ver el comando sin ejecutar:
+
+  binsuid --auto --dry-run -y
+
+--------------------------------------------------------------------------------
+AVISOS NORMALES (no son errores)
+--------------------------------------------------------------------------------
+
+  getcap not found          → este lab no escanea capabilities (falta getcap)
+  sudo: password required   → tu usuario no tiene sudo libre
+
+El escaneo SUID sigue funcionando.
+
+--------------------------------------------------------------------------------
+RESUMEN RÁPIDO
+--------------------------------------------------------------------------------
+
+  Instalar:  curl -fsSL .../get-binsuid.sh | bash && source ~/.bashrc
+  Escanear:  binsuid --scan-only
+  Escalar:   binsuid --auto -y
+
+================================================================================

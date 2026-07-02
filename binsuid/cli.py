@@ -5,10 +5,12 @@ import json
 import os
 
 from binsuid import __version__
+from binsuid.analysis.ranking import best_candidate
 from binsuid.exploit import escalate_privileges
 from binsuid.scanner.engine import run_scan
 from binsuid.ui import (
     print_banner,
+    print_guidance,
     print_scan_findings,
     print_scan_phase,
     print_scan_summary,
@@ -136,17 +138,28 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not result.exploitable:
+        print_scan_findings(result.findings, concise=args.concise, show_all=args.show_all)
         return 1
 
     if args.auto:
         return escalate_privileges(
-            result.exploitable[0],
+            best_candidate(result.findings) or result.exploitable[0],
             dry_run=args.dry_run,
             assume_yes=args.yes or args.silent,
         )
 
     if args.silent:
         return 0
+
+    # Default: guided flow — show targets, then escalate best candidate.
+    print_scan_findings(result.findings, concise=args.concise, show_all=args.show_all, show_guidance=False)
+    top = best_candidate(result.findings)
+    if top and top.is_exploitable and len(result.exploitable) == 1:
+        print_guidance(top, interactive=True)
+        return escalate_privileges(top, dry_run=args.dry_run, assume_yes=args.yes)
+
+    if top and top.is_exploitable:
+        print_guidance(top, interactive=True)
 
     return escalation_loop(
         result,

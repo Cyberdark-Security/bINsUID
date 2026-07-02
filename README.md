@@ -19,15 +19,16 @@ source ~/.bashrc
 binsuid --scan-only
 ```
 
-Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**
+Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**  
+Lab handout for students: **[docs/LEEME-LAB.txt](docs/LEEME-LAB.txt)** (copy into your container's `LEEME.txt`)
 
 ## Usage
 
 ```bash
-binsuid --scan-only          # scan and show priority targets
-binsuid --auto --dry-run -y  # preview escalation command
-binsuid --auto -y            # escalate automatically
-binsuid --json               # JSON output
+binsuid                  # scan, show target, confirm escalation (Y)
+binsuid --scan-only      # scan only
+binsuid --auto -y        # escalate immediately
+binsuid --auto --dry-run -y  # preview command only
 ```
 
 ## What it does

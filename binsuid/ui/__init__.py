@@ -1,6 +1,7 @@
 from binsuid.ui.display import (
     print_banner,
     print_concise_targets,
+    print_guidance,
     print_scan_findings,
     print_scan_phase,
     print_scan_summary,
@@ -12,6 +13,7 @@ from binsuid.ui.display import (
 __all__ = [
     "print_banner",
     "print_concise_targets",
+    "print_guidance",
     "print_scan_findings",
     "print_scan_phase",
     "print_scan_summary",

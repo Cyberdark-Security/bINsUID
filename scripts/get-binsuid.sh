@@ -55,6 +55,21 @@ ensure_path() {
   export PATH="$HOME/bin:$PATH"
 }
 
+print_instructivo() {
+  cat <<'EOF'
+
+--------------------------------------------------
+  COMO USAR bINsUID EN ESTE LAB
+--------------------------------------------------
+  1) Escanear:   binsuid --scan-only
+  2) Escalar:    binsuid --auto -y
+     (o solo:    binsuid   y pulsa Y)
+
+  Instructivo completo: docs/LEEME-LAB.txt en GitHub
+--------------------------------------------------
+EOF
+}
+
 echo "=============================================="
 echo "  bINsUID — setup automático"
 echo "=============================================="
@@ -62,6 +77,7 @@ echo "=============================================="
 if need_cmd binsuid && binsuid -V >/dev/null 2>&1; then
   echo "[+] bINsUID ya está instalado."
   binsuid -V
+  print_instructivo
   exit 0
 fi
 
@@ -69,10 +85,16 @@ PY="$(find_python)" || {
   echo "[-] Python 3 no encontrado. Necesitas python3 en el sistema." >&2
   exit 1
 }
-echo "[*] Python: $PY"
+echo "[*] Python detectado: $PY"
+
+if need_cmd curl; then
+  echo "[*] Descarga: curl"
+elif need_cmd wget; then
+  echo "[*] Descarga: wget"
+fi
 
 if [ ! -f "$INSTALL_DIR/binsuid/cli.py" ]; then
-  echo "[*] Descargando desde GitHub..."
+  echo "[*] Descargando bINsUID desde GitHub..."
   download_repo
 fi
 
@@ -82,8 +104,5 @@ ensure_path
 echo
 echo "[+] Listo. Sin git, sin pip, sin sudo."
 binsuid -V
-echo
-echo "  binsuid --scan-only      # escanear"
-echo "  binsuid --auto -y        # escalar automático"
-echo
+print_instructivo
 echo "Si 'binsuid' no se encuentra:  source ~/.bashrc"

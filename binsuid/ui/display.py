@@ -102,7 +102,7 @@ def _print_finding_line(
         print(paint(f"         ! {note}", ANSI_YELLOW))
 
 
-def print_guidance(finding: Finding) -> None:
+def print_guidance(finding: Finding, *, interactive: bool = False) -> None:
     method = escalation_summary(finding)
     print()
     print(paint(LINE, ANSI_MAGENTA))
@@ -112,9 +112,13 @@ def print_guidance(finding: Finding) -> None:
     print(paint(f"  Method: {method}", ANSI_GREEN))
     if finding.is_exploitable:
         command = adapt_command(finding.best_technique.code, finding) if finding.best_technique else ""
-        print(paint("  Next step:", ANSI_BOLD, ANSI_YELLOW))
-        print(paint("    binsuid --auto -y", ANSI_BOLD, ANSI_CYAN))
-        print(paint("    binsuid --auto --dry-run -y    # preview only", ANSI_CYAN))
+        if interactive:
+            print(paint("  Confirm below to escalate automatically.", ANSI_BOLD, ANSI_YELLOW))
+        else:
+            print(paint("  Next step:", ANSI_BOLD, ANSI_YELLOW))
+            print(paint("    binsuid            # scan and confirm escalation", ANSI_BOLD, ANSI_CYAN))
+            print(paint("    binsuid --auto -y  # escalate without prompts", ANSI_CYAN))
+            print(paint("    binsuid --auto --dry-run -y    # preview only", ANSI_CYAN))
         if command:
             print(paint("  Command preview:", ANSI_YELLOW))
             print(f"    {command}")
@@ -123,7 +127,13 @@ def print_guidance(finding: Finding) -> None:
     print()
 
 
-def print_scan_findings(findings: list[Finding], *, concise: bool = False, show_all: bool = False) -> None:
+def print_scan_findings(
+    findings: list[Finding],
+    *,
+    concise: bool = False,
+    show_all: bool = False,
+    show_guidance: bool = True,
+) -> None:
     if not findings:
         print("No findings.")
         return
@@ -157,7 +167,7 @@ def print_scan_findings(findings: list[Finding], *, concise: bool = False, show_
         else:
             print(paint(f"\n  ({len(noise)} standard system SUID binaries hidden — use --show-all)", ANSI_YELLOW))
 
-    if top:
+    if top and show_guidance:
         print_guidance(top)
 
 
