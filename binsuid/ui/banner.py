@@ -1,4 +1,4 @@
-"""ASCII banner (slant style, same aesthetic as linkook)."""
+"""ASCII banner (figlet slant style)."""
 
 from __future__ import annotations
 

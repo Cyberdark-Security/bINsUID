@@ -1,4 +1,4 @@
-# nfpm config — produces .deb / .rpm packages (same approach as gochecksec + goreleaser nfpm)
+# nfpm config - produces .deb / .rpm packages
 name: binsuid
 arch: all
 platform: linux

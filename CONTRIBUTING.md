@@ -1,9 +1,6 @@
 # Contributing to bINsUID
 
-Thank you for helping improve bINsUID. This project follows the same packaging
-discipline as tools accepted in Kali Linux such as
-[linkook](https://github.com/JackJuly/linkook) and
-[gochecksec](https://github.com/L1ghtn1ng/gochecksec).
+Thank you for helping improve bINsUID.
 
 ## Development setup
 

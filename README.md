@@ -1,33 +1,30 @@
-﻿# bINsUID
+﻿<p align="center">
+  <img src="docs/assets/banner.png" alt="bINsUID - automatic Linux privilege escalation" width="100%">
+</p>
+
+# bINsUID
 
 Automatic Linux privilege escalation: scan **SUID** binaries, **capabilities**, and **sudo**
-misconfigurations, then escalate with one command â€” no manual payloads, no venv, no editing.
-
-Designed for Kali Linux packaging following the same model as accepted tools
-[linkook](https://github.com/JackJuly/linkook) (Python, `pipx install`) and
-[gochecksec](https://github.com/L1ghtn1ng/gochecksec) (GPL-3, `.deb` releases, zero friction UX).
+misconfigurations, then escalate with one command - no manual payloads, no venv, no editing.
 
 > Authorized testing and training only.
 
-## Why bINsUID
+## What it does
 
-| Tool | What it does | User input |
-|------|--------------|------------|
-| [gochecksec](https://github.com/L1ghtn1ng/gochecksec) | Binary hardening flags | `gochecksec ./binary` |
-| [linkook](https://github.com/JackJuly/linkook) | OSINT username pivoting | `linkook username` |
-| **bINsUID** | SUID / caps / sudo privesc | `binsuid` â†’ pick number â†’ `Y` |
+- Enumerates SUID binaries, dangerous file capabilities, and sudo rules
+- Matches findings against offline GTFOBins data and built-in exploit payloads
+- Escalates with minimal interaction: pick a target, confirm, done
 
 ## Install
 
 ```bash
-# Like linkook â€” pipx, no venv
 pipx install binsuid
 
 # Or from source
 git clone https://github.com/Cyberdark-Security/bINsUID.git
 cd bINsUID && pip install .
 
-# Or .deb from Releases (like gochecksec)
+# Or .deb from Releases
 sudo dpkg -i binsuid_*.deb
 ```
 
@@ -36,7 +33,7 @@ sudo dpkg -i binsuid_*.deb
 ## Usage
 
 ```bash
-binsuid              # scan â†’ select target â†’ escalate
+binsuid              # scan -> select target -> escalate
 binsuid --auto -y    # fully automatic (best target)
 binsuid --scan-only  # enumerate only
 binsuid --json       # scripting / CI
@@ -55,7 +52,7 @@ $ binsuid
 
   Escalate which target? [1-2/auto/q]: 1
   Execute privilege escalation? [Y/n]: y
-  [+] SUCCESS â€” you now have root (EUID 0).
+  [+] SUCCESS - you now have root (EUID 0).
 ```
 
 ## Features
@@ -71,4 +68,4 @@ See [packaging/KALI-SUBMISSION.md](packaging/KALI-SUBMISSION.md).
 
 ## License
 
-GPL-3.0-or-later â€” see [LICENSE](LICENSE).
+GPL-3.0-or-later - see [LICENSE](LICENSE).

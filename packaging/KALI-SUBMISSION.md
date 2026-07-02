@@ -1,13 +1,5 @@
 # Kali Linux submission guide
 
-bINsUID follows the same acceptance patterns as tools already in Kali such as:
-
-| Tool | Language | License | Packaging | UX |
-|------|----------|---------|-------------|-----|
-| [linkook](https://github.com/JackJuly/linkook) | Python | MIT | `pipx` / `setup.py` / PyPI | `linkook user` |
-| [gochecksec](https://github.com/L1ghtn1ng/gochecksec) | Go | GPL-3 | GoReleaser + `.deb` | `gochecksec binary` |
-| **bINsUID** | Python | GPL-3 | `nfpm` + `.deb` + `setup.py` | `binsuid` |
-
 ## Checklist (all done upstream)
 
 - [x] GPL-3.0-or-later `LICENSE`
@@ -19,7 +11,7 @@ bINsUID follows the same acceptance patterns as tools already in Kali such as:
 - [x] System depends: `python3`, `libcap2-bin`, `sudo`
 - [x] GitHub Actions CI (test on push/PR)
 - [x] Tagged releases with `.deb`, `.rpm`, wheel, sdist
-- [x] Automatic escalation — no manual command editing
+- [x] Automatic escalation - no manual command editing
 - [x] Flags: `--version`, `--json`, `--silent`, `--no-color`, `--auto`, `-y`
 
 ## Submit to kalilinux/packages
@@ -50,6 +42,6 @@ git tag v1.0.0 && git push origin v1.0.0
 ## Why Kali should accept it
 
 - **Same category** as existing privesc enumeration tools, but with **automatic exploitation**
-- **No venv** required (like gochecksec's motivation vs pwntools)
+- **No venv** required - runs with system Python
 - **Instructor-friendly** for SUID/capabilities labs
-- **Reproducible packaging** identical to other accepted Python security tools
+- **Reproducible packaging** with `.deb` releases and CI

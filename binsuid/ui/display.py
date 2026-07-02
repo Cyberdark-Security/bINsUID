@@ -5,7 +5,7 @@ from binsuid.models import Finding, ScanResult, VectorType
 from binsuid.ui.banner import BANNER_ART, banner_footer
 from binsuid.utils import paint, ANSI_BOLD, ANSI_BLUE, ANSI_CYAN, ANSI_GREEN, ANSI_MAGENTA, ANSI_RED, ANSI_YELLOW
 
-LINE = "═" * 62
+LINE = "=" * 62
 
 VECTOR_COLORS = {
     VectorType.SUID: ANSI_RED,
@@ -45,7 +45,7 @@ def print_scan_summary(result: ScanResult) -> None:
     if result.errors:
         print(paint("\n  Warnings:", ANSI_YELLOW))
         for err in result.errors:
-            print(f"    • {err}")
+            print(f"    - {err}")
     print()
 
 
@@ -79,7 +79,7 @@ def print_vulnerable_targets(findings: list[Finding], *, concise: bool = False) 
         return
 
     print(paint(LINE, ANSI_MAGENTA))
-    print(paint("  VULNERABLE TARGETS — READY TO ESCALATE", ANSI_BOLD, ANSI_MAGENTA))
+    print(paint("  VULNERABLE TARGETS - READY TO ESCALATE", ANSI_BOLD, ANSI_MAGENTA))
     print(paint(LINE, ANSI_MAGENTA))
     print()
 
