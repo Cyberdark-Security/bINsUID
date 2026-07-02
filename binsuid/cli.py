@@ -15,7 +15,7 @@ from binsuid.ui import (
     print_vulnerable_targets,
     prompt_target_choice,
 )
-from binsuid.utils import disable_color
+from binsuid.utils import ANSI_CYAN, disable_color, paint
 
 
 def build_parser() -> argparse.ArgumentParser:
