@@ -76,6 +76,22 @@ pip_install_user() {
   BIN_DIR="$HOME/.local/bin"
   mkdir -p "$BIN_DIR"
 
+  if ! "$py" -m pip --version >/dev/null 2>&1; then
+    echo "[*] Bootstrapping pip for current user (no sudo)..."
+    local get_pip
+    get_pip="$(mktemp /tmp/get-pip.XXXXXX.py)"
+    if need_cmd curl; then
+      curl -fsSL https://bootstrap.pypa.io/get-pip.py -o "$get_pip"
+    elif need_cmd wget; then
+      wget -qO "$get_pip" https://bootstrap.pypa.io/get-pip.py
+    else
+      return 1
+    fi
+    "$py" "$get_pip" --user
+    rm -f "$get_pip"
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+
   if "$py" -m pip install --help 2>/dev/null | grep -q break-system-packages; then
     pip_args+=(--break-system-packages)
   fi

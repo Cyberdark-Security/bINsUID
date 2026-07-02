@@ -72,9 +72,24 @@ Manual fallback without venv:
 ```bash
 curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz -o /tmp/binsuid.tgz
 tar xzf /tmp/binsuid.tgz -C /tmp
-python3 -m pip install --user /tmp/bINsUID-main
+/usr/bin/python3 -m pip install --user /tmp/bINsUID-main
 export PATH="$HOME/.local/bin:$PATH"
 binsuid -V
+```
+
+**No sudo, no pip** (typical privesc Docker lab as `hacker`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/run-no-install.sh | bash
+source ~/.bashrc
+binsuid --scan-only
+```
+
+Or one-shot without any install:
+
+```bash
+curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz | tar xz -C /tmp
+cd /tmp/bINsUID-main && /usr/bin/python3 -m binsuid --scan-only
 ```
 
 ### Other Linux
