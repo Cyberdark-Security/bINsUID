@@ -17,6 +17,21 @@ misconfigurations, then escalate with one command - no manual payloads, no venv,
 
 ## Install
 
+### Quick start — any lab
+
+Use **one** method depending on what the machine has. You only need **Linux + Python 3 + curl** (or wget).
+
+| Your lab looks like… | Command |
+|----------------------|---------|
+| **Docker / CTF as `hacker`, no sudo** | `curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/run-no-install.sh \| bash` then `source ~/.bashrc` |
+| **One-shot, no install at all** | `curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz \| tar xz -C /tmp && cd /tmp/bINsUID-main && /usr/bin/python3 -m binsuid --scan-only` |
+| **Kali with pipx** | `pipx install https://github.com/Cyberdark-Security/bINsUID.git` or `pipx install .` from a clone |
+| **Full VM with git + sudo** | `git clone … && pipx install .` or `./scripts/install-kali.sh` |
+
+**Warnings are normal, not errors:** `getcap not found` or `sudo: a password is required` means that part of the scan was skipped — SUID scanning still works.
+
+**Do not use** `git clone` + `pip install .` in minimal Docker labs (no git, no pip, no sudo).
+
 ### Kali Linux (recommended)
 
 Kali blocks global `pip install` ([PEP 668](https://www.kali.org/docs/general-use/python3-external-packages/)). Use **pipx**:
