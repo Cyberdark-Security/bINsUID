@@ -17,15 +17,50 @@ misconfigurations, then escalate with one command - no manual payloads, no venv,
 
 ## Install
 
+### Kali Linux (recommended)
+
+Kali blocks global `pip install` ([PEP 668](https://www.kali.org/docs/general-use/python3-external-packages/)). Use **pipx**:
+
 ```bash
+sudo apt install -y pipx
+pipx ensurepath
+# reopen the shell, then:
+
 pipx install binsuid
 
-# Or from source
+# Or from a cloned repo:
 git clone https://github.com/Cyberdark-Security/bINsUID.git
-cd bINsUID && pip install .
+cd bINsUID
+pipx install .
+```
 
-# Or .deb from Releases
-sudo dpkg -i binsuid_*.deb
+Quick installer from the repo:
+
+```bash
+git clone https://github.com/Cyberdark-Security/bINsUID.git
+cd bINsUID
+./scripts/install-kali.sh
+```
+
+**Instructor VM / root-only lab** (installs for all users on the system):
+
+```bash
+cd bINsUID
+pip install --break-system-packages .
+```
+
+### Other Linux
+
+```bash
+pipx install binsuid
+# or
+pip install .
+```
+
+### Debian package
+
+```bash
+sudo dpkg -i binsuid_*.deb   # from GitHub Releases
 ```
 
 **Runtime:** Python 3.9+, `libcap2-bin`, `sudo`. **Zero pip dependencies.**
