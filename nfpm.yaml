@@ -1,0 +1,31 @@
+# nfpm config — produces .deb / .rpm packages (same approach as gochecksec + goreleaser nfpm)
+name: binsuid
+arch: all
+platform: linux
+version: "${BINSUID_VERSION}"
+section: utils
+priority: optional
+maintainer: "Cyberdark Security <security@cyberdark.local>"
+description: |
+  SUID, capabilities and sudo scanner with GTFOBins and HackTricks
+  exploitation menu for authorized security training and assessments.
+homepage: "https://github.com/Cyberdark-Security/bINsUID"
+license: "GPL-3.0-or-later"
+contents:
+  - src: ./binsuid
+    dst: /usr/lib/python3/dist-packages/binsuid
+    type: tree
+  - src: ./packaging/debian/binsuid
+    dst: /usr/bin/binsuid
+    file_info:
+      mode: 0755
+  - src: ./man/binsuid.1
+    dst: /usr/share/man/man1/binsuid.1
+    file_info:
+      mode: 0644
+depends:
+  - python3
+  - libcap2-bin
+  - sudo
+rpm:
+  arch: noarch

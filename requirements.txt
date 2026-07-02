@@ -1,0 +1,6 @@
+# bINsUID has zero runtime dependencies (Python stdlib only).
+# System tools used at runtime: find, getcap, sudo (provided by the OS).
+#
+# Development / testing:
+# pytest>=7.0
+# build>=1.0

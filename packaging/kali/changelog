@@ -1,0 +1,5 @@
+binsuid (@VERSION@-1) kali-dev; urgency=medium
+
+  * Initial release: SUID, capabilities and sudo scanner with GTFOBins menu
+
+ -- Cyberdark Security <security@cyberdark.local>  Thu, 02 Jul 2026 12:00:00 +0000

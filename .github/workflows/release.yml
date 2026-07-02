@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: |
+          pip install -e ".[dev]" build
+          sudo apt-get update
+          sudo apt-get install -y nfpm
+
+      - name: Run tests
+        run: pytest -v
+
+      - name: Build Python sdist/wheel
+        run: python -m build
+
+      - name: Build Linux packages (deb, rpm)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          export BINSUID_VERSION="$VERSION"
+          nfpm package -f nfpm.yaml --target dist/ --packager deb
+          nfpm package -f nfpm.yaml --target dist/ --packager rpm
+
+      - name: Create source tarball
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          tar czf "dist/binsuid_${VERSION}_all.tar.gz" \
+            --exclude='.git' --exclude='dist' --exclude='.pytest_cache' \
+            --exclude='*.egg-info' .
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

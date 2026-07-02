@@ -1,0 +1,41 @@
+BINARY=binsuid
+VERSION=$(shell python -c "from binsuid import __version__; print(__version__)")
+
+.PHONY: all install test test-short build build-deb build-rpm clean man update-gtfobins version
+
+all: test build
+
+install:
+	pip install -e .
+
+test:
+	pytest -v
+
+test-short:
+	pytest -v -m "not linux"
+
+version:
+	@echo $(VERSION)
+
+build: build-sdist
+
+build-sdist:
+	python -m build
+
+build-deb:
+	BINSUID_VERSION=$(VERSION) nfpm package -f nfpm.yaml --target dist/ --packager deb
+
+build-rpm:
+	BINSUID_VERSION=$(VERSION) nfpm package -f nfpm.yaml --target dist/ --packager rpm
+
+build-packages: build-deb build-rpm
+
+man:
+	man ./man/binsuid.1
+
+update-gtfobins:
+	python3 scripts/update-gtfobins.py
+
+clean:
+	rm -rf dist/ build/ *.egg-info binsuid.egg-info .pytest_cache
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

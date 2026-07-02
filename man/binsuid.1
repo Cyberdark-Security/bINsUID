@@ -1,0 +1,89 @@
+.TH BINSUID 1 "July 2026" "binsuid 1.0.0" "User Commands"
+.SH NAME
+binsuid \- automatic SUID, capabilities and sudo privilege escalation
+.SH SYNOPSIS
+.B binsuid
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+\fBbinsuid\fR scans Linux systems for exploitable SUID binaries, dangerous file
+capabilities, and sudo misconfigurations, then performs automatic privilege
+escalation with built-in payloads. No manual command editing is required.
+.PP
+Intended for authorized penetration testing, CTF challenges, and security training.
+.SH OPTIONS
+.TP
+.B \-\-auto
+Escalate the highest-priority vulnerable target automatically.
+.TP
+.B \-y, \-\-yes
+Skip the confirmation prompt.
+.TP
+.B \-\-quick
+Limit filesystem enumeration to common binary directories.
+.TP
+.B \-\-scan-only
+Scan and list vulnerable targets without offering escalation.
+.TP
+.B \-\-json
+Print machine-readable JSON output.
+.TP
+.B \-\-silent
+Print a one-line summary only.
+.TP
+.B \-\-concise
+Compact one-line-per-target listing.
+.TP
+.B \-\-no-color
+Disable ANSI color output.
+.TP
+.B \-\-dry-run
+Show escalation plan without executing.
+.TP
+.B \-\-skip-suid
+Skip SUID enumeration.
+.TP
+.B \-\-skip-capabilities
+Skip file capability enumeration.
+.TP
+.B \-\-scan-process-caps
+Include process capability enumeration.
+.TP
+.B \-\-skip-sudo
+Skip sudo rule enumeration.
+.TP
+.B \-\-sudo-interactive
+Run \fBsudo \-l\fR with password prompt.
+.TP
+.B \-V, \-\-version
+Show version information.
+.SH EXAMPLES
+Interactive escalation:
+.PP
+.RS
+binsuid
+.RE
+.PP
+Fully automatic:
+.PP
+.RS
+binsuid \-\-auto \-y
+.RE
+.PP
+Scripting:
+.PP
+.RS
+binsuid \-\-json \-\-scan-only
+.RE
+.SH FILES
+.TP
+.I binsuid/data/gtfobins-api.json
+Bundled GTFOBins API snapshot.
+.SH AUTHOR
+Cyberdark Security
+.SH "SEE ALSO"
+.BR gtfobins (7),
+.BR sudo (8),
+.BR getcap (8)
+.SH COPYRIGHT
+Copyright \(co 2026 Cyberdark Security.
+License GPL-3.0-or-later.
