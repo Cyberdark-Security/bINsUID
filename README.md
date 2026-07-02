@@ -4,161 +4,77 @@
 
 # bINsUID
 
-Automatic Linux privilege escalation: scan **SUID** binaries, **capabilities**, and **sudo**
-misconfigurations, then escalate with one command - no manual payloads, no venv, no editing.
+Automatic Linux privilege escalation for authorized labs and training.
+Scan SUID, capabilities, and sudo — then escalate with one command.
 
 > Authorized testing and training only.
 
-## What it does
+## Start here (any lab)
 
-- Enumerates SUID binaries, dangerous file capabilities, and sudo rules
-- Matches findings against offline GTFOBins data and built-in exploit payloads
-- Escalates with minimal interaction: pick a target, confirm, done
-
-## Install
-
-### Quick start — any lab
-
-Use **one** method depending on what the machine has. You only need **Linux + Python 3 + curl** (or wget).
-
-| Your lab looks like… | Command |
-|----------------------|---------|
-| **Docker / CTF as `hacker`, no sudo** | `curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/run-no-install.sh \| bash` then `source ~/.bashrc` |
-| **One-shot, no install at all** | `curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz \| tar xz -C /tmp && cd /tmp/bINsUID-main && /usr/bin/python3 -m binsuid --scan-only` |
-| **Kali with pipx** | `pipx install https://github.com/Cyberdark-Security/bINsUID.git` or `pipx install .` from a clone |
-| **Full VM with git + sudo** | `git clone … && pipx install .` or `./scripts/install-kali.sh` |
-
-**Warnings are normal, not errors:** `getcap not found` or `sudo: a password is required` means that part of the scan was skipped — SUID scanning still works.
-
-**Do not use** `git clone` + `pip install .` in minimal Docker labs (no git, no pip, no sudo).
-
-### Kali Linux (recommended)
-
-Kali blocks global `pip install` ([PEP 668](https://www.kali.org/docs/general-use/python3-external-packages/)). Use **pipx**:
+**One command.** Works without git, pip, or sudo. Needs only Linux + Python 3 + curl:
 
 ```bash
-sudo apt install -y pipx
-pipx ensurepath
-# reopen the shell, then:
-
-pipx install binsuid
-
-# Or from a cloned repo:
-git clone https://github.com/Cyberdark-Security/bINsUID.git
-cd bINsUID
-pipx install .
-```
-
-Quick installer from the repo:
-
-```bash
-git clone https://github.com/Cyberdark-Security/bINsUID.git
-cd bINsUID
-./scripts/install-kali.sh
-```
-
-**Instructor VM / root-only lab** (installs for all users on the system):
-
-```bash
-cd bINsUID
-pip install --break-system-packages .
-```
-
-### Docker / minimal lab (no git, no pipx)
-
-Many CTF and privesc lab containers only ship `python3` and `curl`. One-liner:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
 source ~/.bashrc
 binsuid --scan-only
 ```
 
-If you see `ensurepip is not available`, install venv support first (you have `sudo` in most labs):
-
-```bash
-sudo apt update && sudo apt install -y python3-venv python3-pip curl
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash
-source ~/.bashrc
-```
-
-Manual fallback without venv:
-
-```bash
-curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz -o /tmp/binsuid.tgz
-tar xzf /tmp/binsuid.tgz -C /tmp
-/usr/bin/python3 -m pip install --user /tmp/bINsUID-main
-export PATH="$HOME/.local/bin:$PATH"
-binsuid -V
-```
-
-**No sudo, no pip** (typical privesc Docker lab as `hacker`):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/run-no-install.sh | bash
-source ~/.bashrc
-binsuid --scan-only
-```
-
-Or one-shot without any install:
-
-```bash
-curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz | tar xz -C /tmp
-cd /tmp/bINsUID-main && /usr/bin/python3 -m binsuid --scan-only
-```
-
-### Other Linux
-
-```bash
-pipx install binsuid
-# or
-pip install .
-```
-
-### Debian package
-
-```bash
-sudo dpkg -i binsuid_*.deb   # from GitHub Releases
-```
-
-**Runtime:** Python 3.9+, `libcap2-bin`, `sudo`. **Zero pip dependencies.**
+Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**
 
 ## Usage
 
 ```bash
-binsuid              # scan -> select target -> escalate
-binsuid --auto -y    # fully automatic (best target)
-binsuid --scan-only  # enumerate only
-binsuid --json       # scripting / CI
-binsuid --silent     # one-line summary
-binsuid --concise    # compact listing
-binsuid --no-color   # plain output
-binsuid -V           # version
+binsuid --scan-only          # scan and show priority targets
+binsuid --auto --dry-run -y  # preview escalation command
+binsuid --auto -y            # escalate automatically
+binsuid --json               # JSON output
 ```
 
-### Example
+## What it does
+
+- Finds SUID binaries, dangerous capabilities, and sudo rules
+- **Highlights the lab target** (hides standard system SUID noise)
+- Suggests the next command (`binsuid --auto -y`)
+- Built-in payloads for 40+ binaries + PATH hijack detection
+- Offline GTFOBins data — no internet needed after download
+
+## Requirements
+
+| Required | Optional (warnings if missing) |
+|----------|--------------------------------|
+| Python 3.9+ | `getcap` (capabilities scan) |
+| curl or wget (first download only) | passwordless `sudo -l` (sudo scan) |
+
+**Zero pip dependencies.**
+
+## Other install methods
+
+| Environment | Method |
+|-------------|--------|
+| Any minimal lab | [`scripts/get-binsuid.sh`](scripts/get-binsuid.sh) |
+| Kali / pipx | `pipx install https://github.com/Cyberdark-Security/bINsUID.git` |
+| Debian package | `sudo dpkg -i binsuid_*.deb` from [Releases](https://github.com/Cyberdark-Security/bINsUID/releases) |
+| No install, one-shot | `curl -sL …/main.tar.gz \| tar xz -C /tmp && cd /tmp/bINsUID-main && python3 -m binsuid` |
+
+Details: [docs/INSTALL.es.md](docs/INSTALL.es.md) (Spanish) · [scripts/](scripts/)
+
+## Example output
 
 ```
-$ binsuid
-  [1] SUID         /usr/bin/find -> Automatic SUID root shell
-  [2] CAPABILITIES /usr/bin/python3 [CAP_SETUID] -> Automatic capability root shell
+  Priority targets    : 1
+  System noise hidden : 18
 
-  Escalate which target? [1-2/auto/q]: 1
-  Execute privilege escalation? [Y/n]: y
-  [+] SUCCESS - you now have root (EUID 0).
+  >>> AUTO SUID /usr/local/bin/backup
+         -> Automatic PATH hijack (tar) via SUID
+
+  RECOMMENDED TARGET
+  Next step: binsuid --auto -y
 ```
 
-## Features
-
-- Automatic scan: SUID + file capabilities + sudo rules
-- Built-in payloads for 40+ binaries (no GTFOBins copy-paste)
-- Offline GTFOBins + HackTricks capability knowledge
-- GPL-3.0-or-later, man page, CI, `.deb`/`.rpm` releases
-
-## Kali Linux
+## Kali Linux packaging
 
 See [packaging/KALI-SUBMISSION.md](packaging/KALI-SUBMISSION.md).
 
 ## License
 
-GPL-3.0-or-later - see [LICENSE](LICENSE).
+GPL-3.0-or-later — see [LICENSE](LICENSE).
