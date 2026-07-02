@@ -55,6 +55,7 @@ class Finding:
     severity: str = "high"
     notes: list[str] = field(default_factory=list)
     best_technique: Technique | None = None
+    priority_score: int = 0
 
     @property
     def is_exploitable(self) -> bool:

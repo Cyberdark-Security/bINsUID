@@ -16,3 +16,18 @@ def test_path_hijack_payload():
     assert "/usr/local/bin/backup" in code
     assert "PATH=/tmp/binsuid-hijack:$PATH" in code
     assert "> /tmp/binsuid-hijack/tar" in code
+
+
+def test_read_binary_strings_fallback():
+    import os
+    import tempfile
+    from binsuid.exploit.path_hijack import detect_from_strings, read_binary_strings
+
+    fd, path = tempfile.mkstemp()
+    os.write(fd, b"\x00system\x00tar -czf /tmp/backup.tar.gz /home/*\x00")
+    os.close(fd)
+    try:
+        text = read_binary_strings(path)
+        assert detect_from_strings(text) == "tar"
+    finally:
+        os.unlink(path)

@@ -41,6 +41,11 @@ def which(binary: str) -> str | None:
     return shutil.which(binary)
 
 
+def is_abs_path(path: str) -> bool:
+    """True for Linux absolute paths and native absolute paths (tests on Windows)."""
+    return path.startswith("/") or os.path.isabs(path)
+
+
 def run_command(
     cmd: list[str] | str,
     *,

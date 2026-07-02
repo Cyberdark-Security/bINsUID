@@ -39,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-color", action="store_true", help="Plain output without ANSI colors")
     parser.add_argument("--silent", action="store_true", help="Minimal output (summary line only)")
     parser.add_argument("--concise", action="store_true", help="Compact one-line-per-target listing")
+    parser.add_argument("--show-all", action="store_true", help="Include low-interest system SUID binaries")
     parser.add_argument("--skip-suid", action="store_true", help="Skip SUID scan")
     parser.add_argument("--skip-capabilities", action="store_true", help="Skip file capabilities scan")
     parser.add_argument("--scan-process-caps", action="store_true", help="Include process capabilities")
@@ -131,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         print_scan_summary(result)
 
     if args.scan_only:
-        print_scan_findings(result.findings, concise=args.concise)
+        print_scan_findings(result.findings, concise=args.concise, show_all=args.show_all)
         return 0
 
     if not result.exploitable:
