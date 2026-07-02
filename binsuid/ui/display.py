@@ -68,6 +68,42 @@ def print_concise_targets(findings: list[Finding]) -> None:
         print(f"[{idx}] {tag} {finding.path} -> {method}")
 
 
+def _finding_location(finding: Finding) -> str:
+    if finding.vector == VectorType.CAPABILITIES:
+        return finding.summary or finding.path
+    return finding.path or finding.executable or "-"
+
+
+def print_scan_findings(findings: list[Finding], *, concise: bool = False) -> None:
+    if not findings:
+        print("No findings.")
+        return
+
+    if concise:
+        for idx, finding in enumerate(findings, start=1):
+            tag = VECTOR_LABELS.get(finding.vector, finding.vector.value)
+            flag = "AUTO" if finding.is_exploitable else "REVIEW"
+            detail = escalation_summary(finding) if finding.is_exploitable else (finding.details or "-")
+            print(f"[{idx}] {flag} {tag} {_finding_location(finding)} | {detail}")
+        return
+
+    print(paint(LINE, ANSI_CYAN))
+    print(paint("  FINDINGS", ANSI_BOLD, ANSI_CYAN))
+    print(paint(LINE, ANSI_CYAN))
+    print()
+
+    for idx, finding in enumerate(findings, start=1):
+        color = VECTOR_COLORS.get(finding.vector, ANSI_YELLOW)
+        tag = VECTOR_LABELS.get(finding.vector, finding.vector.value.upper())
+        flag = paint("AUTO", ANSI_BOLD, ANSI_GREEN) if finding.is_exploitable else paint("REVIEW", ANSI_YELLOW)
+        print(paint(f"  [{idx}] ", ANSI_BOLD) + flag + " " + paint(f"{tag:<12}", color) + f" {_finding_location(finding)}")
+        if finding.is_exploitable:
+            print(paint(f"       -> {escalation_summary(finding)}", ANSI_GREEN))
+        elif finding.details:
+            print(f"       -> {finding.details}")
+        print()
+
+
 def print_vulnerable_targets(findings: list[Finding], *, concise: bool = False) -> None:
     if concise:
         print_concise_targets(findings)

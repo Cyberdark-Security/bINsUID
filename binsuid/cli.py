@@ -9,6 +9,7 @@ from binsuid.exploit import escalate_privileges
 from binsuid.scanner.engine import run_scan
 from binsuid.ui import (
     print_banner,
+    print_scan_findings,
     print_scan_phase,
     print_scan_summary,
     print_silent_summary,
@@ -26,10 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-V", "--version", action="version", version=f"binsuid {__version__}")
 
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--scan-only", action="store_true", help="Scan only, do not offer escalation")
-    mode.add_argument("--json", action="store_true", help="JSON output (scripting)")
-    mode.add_argument("--auto", action="store_true", help="Escalate the best target automatically")
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--scan-only", action="store_true", help="Scan only, do not offer escalation")
+    action.add_argument("--auto", action="store_true", help="Escalate the best target automatically")
+
+    parser.add_argument("--json", action="store_true", help="JSON output (scripting; use with --scan-only)")
 
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
     parser.add_argument("--quick", action="store_true", help="Faster scan (common paths)")
@@ -121,19 +123,19 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.json:
         output_json(result)
-        return 0 if result.exploitable else 1
+        return 0
 
     if args.silent:
         print_silent_summary(result)
-    elif not quiet:
+    else:
         print_scan_summary(result)
+
+    if args.scan_only:
+        print_scan_findings(result.findings, concise=args.concise)
+        return 0
 
     if not result.exploitable:
         return 1
-
-    if args.scan_only:
-        print_vulnerable_targets(result.exploitable, concise=args.concise or args.silent)
-        return 0
 
     if args.auto:
         return escalate_privileges(
