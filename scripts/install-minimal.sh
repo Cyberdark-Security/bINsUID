@@ -5,9 +5,20 @@ set -euo pipefail
 REPO_URL="${BINSUID_REPO_URL:-https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz}"
 WORKDIR="${BINSUID_INSTALL_DIR:-$HOME/.local/src/bINsUID}"
 VENV="${BINSUID_VENV:-$HOME/.local/venvs/binsuid}"
+BIN_DIR="$VENV/bin"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+system_python() {
+  if [ -x /usr/bin/python3 ]; then
+    echo /usr/bin/python3
+  elif need_cmd python3; then
+    command -v python3
+  else
+    return 1
+  fi
 }
 
 download_repo() {
@@ -29,31 +40,38 @@ download_repo() {
 }
 
 install_with_venv() {
-  if ! need_cmd python3; then
+  local py
+  py="$(system_python)" || {
     echo "[-] python3 is required." >&2
-    exit 1
-  fi
-  if ! python3 -m venv --help >/dev/null 2>&1; then
+    return 1
+  }
+  if ! "$py" -m venv --help >/dev/null 2>&1; then
     return 1
   fi
-  python3 -m venv "$VENV"
-  "$VENV/bin/pip" install -q --upgrade pip
-  "$VENV/bin/pip" install -q "$WORKDIR"
-  echo "$VENV/bin" > "$HOME/.local/binsuid-path"
+  rm -rf "$VENV"
+  "$py" -m venv "$VENV"
+  "$BIN_DIR/pip" install --upgrade pip
+  "$BIN_DIR/pip" install "$WORKDIR"
 }
 
 install_with_pip_user() {
-  if ! need_cmd python3; then
+  local py
+  py="$(system_python)" || {
     echo "[-] python3 is required." >&2
-    exit 1
-  fi
-  if need_cmd pip3; then
-    pip3 install --user "$WORKDIR"
-  else
-    python3 -m pip install --user "$WORKDIR"
-  fi
+    return 1
+  }
+  "$py" -m pip install --user "$WORKDIR"
   mkdir -p "$HOME/.local/bin"
-  echo "$HOME/.local/bin" > "$HOME/.local/binsuid-path"
+  BIN_DIR="$HOME/.local/bin"
+}
+
+write_path() {
+  local path_line="export PATH=\"$BIN_DIR:\$PATH\""
+  if ! grep -qF "$BIN_DIR" "$HOME/.bashrc" 2>/dev/null; then
+    printf '\n# bINsUID\n%s\n' "$path_line" >> "$HOME/.bashrc"
+  fi
+  # shellcheck disable=SC1090
+  export PATH="$BIN_DIR:$PATH"
 }
 
 echo "[*] Downloading bINsUID..."
@@ -69,16 +87,16 @@ else
   exit 1
 fi
 
-PATH_LINE='export PATH="$(cat "$HOME/.local/binsuid-path" 2>/dev/null):$PATH"'
-if ! grep -q 'binsuid-path' "$HOME/.bashrc" 2>/dev/null; then
-  printf '\n# bINsUID\n%s\n' "$PATH_LINE" >> "$HOME/.bashrc"
+if [ ! -x "$BIN_DIR/binsuid" ]; then
+  echo "[-] binsuid binary not found in $BIN_DIR" >&2
+  exit 1
 fi
 
-# shellcheck disable=SC1090
-eval "$PATH_LINE"
+write_path
 
 echo
 echo "[+] bINsUID installed."
-binsuid -V
+"$BIN_DIR/binsuid" -V
 echo
 echo "Run: binsuid --scan-only"
+echo "If needed: source ~/.bashrc"
