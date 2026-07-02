@@ -5,7 +5,7 @@ set -euo pipefail
 REPO_URL="${BINSUID_REPO_URL:-https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz}"
 WORKDIR="${BINSUID_INSTALL_DIR:-$HOME/.local/src/bINsUID}"
 VENV="${BINSUID_VENV:-$HOME/.local/venvs/binsuid}"
-BIN_DIR="$VENV/bin"
+BIN_DIR=""
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
@@ -39,30 +39,52 @@ download_repo() {
   rm -f "$archive"
 }
 
-install_with_venv() {
-  local py
-  py="$(system_python)" || {
-    echo "[-] python3 is required." >&2
-    return 1
-  }
-  if ! "$py" -m venv --help >/dev/null 2>&1; then
+try_install_venv_package() {
+  if ! need_cmd sudo || ! need_cmd apt-get; then
     return 1
   fi
+  echo "[*] Installing python3-venv (needs sudo)..."
+  sudo apt-get update -qq
+  sudo apt-get install -y python3-venv python3-pip
+}
+
+venv_is_ready() {
+  [ -x "$VENV/bin/pip" ] && [ -x "$VENV/bin/python3" ]
+}
+
+install_with_venv() {
+  local py
+  py="$(system_python)" || return 1
+
   rm -rf "$VENV"
-  "$py" -m venv "$VENV"
+  if ! "$py" -m venv "$VENV" 2>/dev/null || ! venv_is_ready; then
+    try_install_venv_package || return 1
+    rm -rf "$VENV"
+    "$py" -m venv "$VENV" || return 1
+  fi
+
+  venv_is_ready || return 1
+  BIN_DIR="$VENV/bin"
   "$BIN_DIR/pip" install --upgrade pip
   "$BIN_DIR/pip" install "$WORKDIR"
 }
 
-install_with_pip_user() {
-  local py
-  py="$(system_python)" || {
-    echo "[-] python3 is required." >&2
-    return 1
-  }
-  "$py" -m pip install --user "$WORKDIR"
-  mkdir -p "$HOME/.local/bin"
+pip_install_user() {
+  local py pip_args=()
+  py="$(system_python)" || return 1
+
   BIN_DIR="$HOME/.local/bin"
+  mkdir -p "$BIN_DIR"
+
+  if "$py" -m pip install --help 2>/dev/null | grep -q break-system-packages; then
+    pip_args+=(--break-system-packages)
+  fi
+
+  "$py" -m pip install --user "${pip_args[@]}" "$WORKDIR"
+}
+
+install_with_pip_user() {
+  pip_install_user || return 1
 }
 
 write_path() {
@@ -70,7 +92,6 @@ write_path() {
   if ! grep -qF "$BIN_DIR" "$HOME/.bashrc" 2>/dev/null; then
     printf '\n# bINsUID\n%s\n' "$path_line" >> "$HOME/.bashrc"
   fi
-  # shellcheck disable=SC1090
   export PATH="$BIN_DIR:$PATH"
 }
 
@@ -79,11 +100,14 @@ download_repo
 
 echo "[*] Installing..."
 if install_with_venv; then
-  :
+  echo "[*] Installed in venv: $VENV"
 elif install_with_pip_user; then
-  :
+  echo "[*] Installed with pip --user"
 else
-  echo "[-] Install failed. Try: sudo apt install -y python3 python3-venv python3-pip curl" >&2
+  echo "[-] Install failed." >&2
+  echo "    Try manually:" >&2
+  echo "      sudo apt update && sudo apt install -y python3-venv python3-pip curl" >&2
+  echo "      curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash" >&2
   exit 1
 fi
 

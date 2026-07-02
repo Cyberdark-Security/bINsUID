@@ -55,23 +55,26 @@ Many CTF and privesc lab containers only ship `python3` and `curl`. One-liner:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash
+source ~/.bashrc
+binsuid --scan-only
 ```
 
-Manual steps if you prefer:
+If you see `ensurepip is not available`, install venv support first (you have `sudo` in most labs):
+
+```bash
+sudo apt update && sudo apt install -y python3-venv python3-pip curl
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/install-minimal.sh | bash
+source ~/.bashrc
+```
+
+Manual fallback without venv:
 
 ```bash
 curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz -o /tmp/binsuid.tgz
 tar xzf /tmp/binsuid.tgz -C /tmp
-python3 -m venv ~/.local/venvs/binsuid
-~/.local/venvs/binsuid/bin/pip install /tmp/bINsUID-main
-export PATH="$HOME/.local/venvs/binsuid/bin:$PATH"
+python3 -m pip install --user /tmp/bINsUID-main
+export PATH="$HOME/.local/bin:$PATH"
 binsuid -V
-```
-
-If `python3 -m venv` fails, install packages first (when you have sudo):
-
-```bash
-sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl
 ```
 
 ### Other Linux
