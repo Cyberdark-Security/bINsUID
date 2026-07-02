@@ -1,7 +1,7 @@
-# bINsUID
+﻿# bINsUID
 
 Automatic Linux privilege escalation: scan **SUID** binaries, **capabilities**, and **sudo**
-misconfigurations, then escalate with one command — no manual payloads, no venv, no editing.
+misconfigurations, then escalate with one command â€” no manual payloads, no venv, no editing.
 
 Designed for Kali Linux packaging following the same model as accepted tools
 [linkook](https://github.com/JackJuly/linkook) (Python, `pipx install`) and
@@ -15,12 +15,12 @@ Designed for Kali Linux packaging following the same model as accepted tools
 |------|--------------|------------|
 | [gochecksec](https://github.com/L1ghtn1ng/gochecksec) | Binary hardening flags | `gochecksec ./binary` |
 | [linkook](https://github.com/JackJuly/linkook) | OSINT username pivoting | `linkook username` |
-| **bINsUID** | SUID / caps / sudo privesc | `binsuid` → pick number → `Y` |
+| **bINsUID** | SUID / caps / sudo privesc | `binsuid` â†’ pick number â†’ `Y` |
 
 ## Install
 
 ```bash
-# Like linkook — pipx, no venv
+# Like linkook â€” pipx, no venv
 pipx install binsuid
 
 # Or from source
@@ -36,7 +36,7 @@ sudo dpkg -i binsuid_*.deb
 ## Usage
 
 ```bash
-binsuid              # scan → select target → escalate
+binsuid              # scan â†’ select target â†’ escalate
 binsuid --auto -y    # fully automatic (best target)
 binsuid --scan-only  # enumerate only
 binsuid --json       # scripting / CI
@@ -55,7 +55,7 @@ $ binsuid
 
   Escalate which target? [1-2/auto/q]: 1
   Execute privilege escalation? [Y/n]: y
-  [+] SUCCESS — you now have root (EUID 0).
+  [+] SUCCESS â€” you now have root (EUID 0).
 ```
 
 ## Features
@@ -71,4 +71,4 @@ See [packaging/KALI-SUBMISSION.md](packaging/KALI-SUBMISSION.md).
 
 ## License
 
-GPL-3.0-or-later — see [LICENSE](LICENSE).
+GPL-3.0-or-later â€” see [LICENSE](LICENSE).
