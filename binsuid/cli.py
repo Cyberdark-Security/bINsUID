@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 
 from binsuid import __version__
 from binsuid.analysis.ranking import best_candidate
@@ -43,10 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--concise", action="store_true", help="Compact one-line-per-target listing")
     parser.add_argument("--show-all", action="store_true", help="Include low-interest system SUID binaries")
     parser.add_argument("--skip-suid", action="store_true", help="Skip SUID scan")
+    parser.add_argument("--skip-sgid", action="store_true", help="Skip SGID scan")
     parser.add_argument("--skip-capabilities", action="store_true", help="Skip file capabilities scan")
     parser.add_argument("--scan-process-caps", action="store_true", help="Include process capabilities")
     parser.add_argument("--no-suspicious-paths", action="store_true", help="Skip /opt /tmp /home in quick mode")
     parser.add_argument("--skip-sudo", action="store_true", help="Skip sudo -l scan")
+    parser.add_argument("--skip-path-audit", action="store_true", help="Skip writable PATH audit")
+    parser.add_argument("--skip-persistence", action="store_true", help="Skip cron persistence audit")
+    parser.add_argument("--skip-groups", action="store_true", help="Skip privileged group hints")
     parser.add_argument("--sudo-interactive", action="store_true", help="Use sudo -l with password")
     return parser
 
@@ -80,17 +85,29 @@ def _run_scan(args, *, quiet: bool = False) -> object:
     if not quiet:
         if not args.skip_suid:
             print_scan_phase("Scanning SUID binaries")
+        if not args.skip_sgid:
+            print_scan_phase("Scanning SGID binaries")
         if not args.skip_capabilities:
             print_scan_phase("Scanning file capabilities")
         if not args.skip_sudo:
             print_scan_phase("Scanning sudo rules")
+        if not args.skip_path_audit:
+            print_scan_phase("Auditing writable PATH")
+        if not args.skip_persistence:
+            print_scan_phase("Checking cron persistence")
+        if not args.skip_groups:
+            print_scan_phase("Checking privileged groups")
         print(paint("-" * 55, ANSI_CYAN))
     return run_scan(
         quick=args.quick,
         skip_suid=args.skip_suid,
+        skip_sgid=args.skip_sgid,
         skip_capabilities=args.skip_capabilities,
         skip_process_capabilities=not args.scan_process_caps,
         skip_sudo=args.skip_sudo,
+        skip_path_audit=args.skip_path_audit,
+        skip_persistence=args.skip_persistence,
+        skip_groups=args.skip_groups,
         sudo_interactive=args.sudo_interactive,
         audit_suspicious_paths=not args.no_suspicious_paths,
     )
@@ -125,8 +142,13 @@ def main(argv: list[str] | None = None) -> int:
     result = _run_scan(args, quiet=quiet)
 
     if args.json:
+        if args.auto:
+            print(
+                "warning: --json ignores --auto; use --json --scan-only for scripting",
+                file=sys.stderr,
+            )
         output_json(result)
-        return 0
+        return 1 if result.exploitable else 0
 
     if args.silent:
         print_silent_summary(result)

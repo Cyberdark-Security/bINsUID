@@ -207,7 +207,9 @@ def get_shadow_gid() -> int | None:
     return None
 
 
-def current_ids() -> tuple[int, int, int, int]:
-    uid = os.geteuid() if hasattr(os, "geteuid") else os.getuid()
-    gid = os.getegid() if hasattr(os, "getegid") else os.getgid()
-    return uid, gid, os.getuid(), os.getgid()
+def current_ids() -> tuple[int | None, int | None, int | None, int | None]:
+    if hasattr(os, "geteuid"):
+        uid = os.geteuid()
+        gid = os.getegid()
+        return uid, gid, os.getuid(), os.getgid()
+    return None, None, None, None

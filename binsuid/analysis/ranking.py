@@ -37,11 +37,47 @@ def score_finding(finding: Finding) -> int:
         if any(finding.path.startswith(prefix) for prefix in SUSPICIOUS_PREFIXES):
             score += 250
 
+    if finding.vector == VectorType.SGID:
+        score += 450
+        if any(finding.path.startswith(prefix) for prefix in SUSPICIOUS_PREFIXES):
+            score += 200
+        if finding.details == "known-sgid":
+            score -= 300
+
+    if finding.vector == VectorType.PATH_HIJACK:
+        score += 350
+        if finding.details == "user-writable":
+            score += 150
+
+    if finding.vector == VectorType.PERSISTENCE:
+        score += 400
+        if finding.severity == "high":
+            score += 100
+
+    if finding.vector == VectorType.GROUP:
+        score += 300
+        if finding.executable in {"docker", "lxd", "disk"}:
+            score += 200
+
     if finding.vector == VectorType.CAPABILITIES:
         score += 600
+        if any("writable" in note.lower() for note in finding.notes):
+            score += 200
+
+    if finding.vector == VectorType.PROCESS_CAPABILITIES:
+        score += 300
+        if any(c in finding.capabilities for c in ("CAP_SETUID", "CAP_SETFCAP", "CAP_SYS_ADMIN")):
+            score += 250
 
     if finding.vector == VectorType.SUDO and finding.is_exploitable:
         score += 900
+
+    if finding.vector == VectorType.SUDO and "setenv=True" in finding.details:
+        score += 350
+        if "SETENV" not in " ".join(finding.notes):
+            finding.notes.append(
+                "SETENV sudo rule — LD_PRELOAD / PYTHONSTARTUP / PERL5OPT abuse likely"
+            )
 
     if finding.severity == "critical":
         score += 200

@@ -11,16 +11,24 @@ LINE = "=" * 62
 
 VECTOR_COLORS = {
     VectorType.SUID: ANSI_RED,
+    VectorType.SGID: ANSI_RED,
     VectorType.CAPABILITIES: ANSI_MAGENTA,
     VectorType.PROCESS_CAPABILITIES: ANSI_BLUE,
     VectorType.SUDO: ANSI_CYAN,
+    VectorType.PATH_HIJACK: ANSI_YELLOW,
+    VectorType.PERSISTENCE: ANSI_YELLOW,
+    VectorType.GROUP: ANSI_GREEN,
 }
 
 VECTOR_LABELS = {
     VectorType.SUID: "SUID",
+    VectorType.SGID: "SGID",
     VectorType.CAPABILITIES: "CAPABILITIES",
     VectorType.PROCESS_CAPABILITIES: "PROCESS",
     VectorType.SUDO: "SUDO",
+    VectorType.PATH_HIJACK: "PATH",
+    VectorType.PERSISTENCE: "CRON",
+    VectorType.GROUP: "GROUP",
 }
 
 
@@ -59,8 +67,13 @@ def print_silent_summary(result: ScanResult) -> None:
     vuln = result.exploitable
     suid = sum(1 for f in vuln if f.vector == VectorType.SUID)
     caps = sum(1 for f in vuln if f.vector == VectorType.CAPABILITIES)
+    proc = sum(1 for f in vuln if f.vector == VectorType.PROCESS_CAPABILITIES)
     sudo = sum(1 for f in vuln if f.vector == VectorType.SUDO)
-    print(f"Vulnerable: {len(vuln)} | SUID: {suid} | Capabilities: {caps} | Sudo: {sudo}")
+    parts = [f"Vulnerable: {len(vuln)}", f"SUID: {suid}", f"Capabilities: {caps}"]
+    if proc:
+        parts.append(f"Process: {proc}")
+    parts.append(f"Sudo: {sudo}")
+    print(" | ".join(parts))
 
 
 def _finding_location(finding: Finding) -> str:
@@ -198,7 +211,11 @@ def print_vulnerable_targets(findings: list[Finding], *, concise: bool = False) 
 
 def prompt_target_choice(max_value: int) -> int | str | None:
     while True:
-        raw = input(paint("\n  Escalate which target? [1-", ANSI_BOLD) + f"{max_value}/auto/q]: ").strip().lower()
+        try:
+            raw = input(paint("\n  Escalate which target? [1-", ANSI_BOLD) + f"{max_value}/auto/q]: ").strip().lower()
+        except EOFError:
+            print(paint("\n  No input available — exiting.", ANSI_YELLOW))
+            return None
         if raw in {"q", "quit", "exit"}:
             return None
         if raw == "auto":

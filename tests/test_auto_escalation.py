@@ -12,6 +12,14 @@ def _finding(path: str, vector: VectorType, caps=None) -> Finding:
     )
 
 
+def test_sqlite3_suid_builtin_auto():
+    finding = _finding("/usr/bin/sqlite3", VectorType.SUID)
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert "/bin/sh" in finding.best_technique.code
+
+
 def test_suid_find_builtin_auto():
     finding = _finding("/usr/bin/find", VectorType.SUID)
     finding.techniques = builtin_techniques_for(finding)
@@ -58,3 +66,77 @@ def test_select_prefers_builtin():
     )
     best = select_best_technique([gtfobins, builtin])
     assert best.metadata["source"] == "builtin"
+
+
+def test_sudo_git_builtin_auto():
+    finding = Finding(
+        vector=VectorType.SUDO,
+        path="/usr/bin/git",
+        executable="git",
+        details="cmd=/usr/bin/git; runas=root; nopasswd=True; setenv=False; user=student",
+        severity="high",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert "sudo -n" in finding.best_technique.code
+    assert "core.editor" in finding.best_technique.code
+
+
+def test_sudo_sqlite3_builtin_auto():
+    finding = Finding(
+        vector=VectorType.SUDO,
+        path="/usr/bin/sqlite3",
+        executable="sqlite3",
+        details="cmd=/usr/bin/sqlite3; runas=root; nopasswd=True; setenv=False; user=student",
+        severity="high",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert ".shell /bin/sh" in finding.best_technique.code
+
+
+def test_setenv_python3_pythonstartup_auto():
+    finding = Finding(
+        vector=VectorType.SUDO,
+        path="/usr/bin/python3",
+        executable="python3",
+        details="cmd=/usr/bin/python3; runas=root; nopasswd=True; setenv=True; user=student",
+        severity="critical",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert "PYTHONSTARTUP" in finding.best_technique.code
+    assert finding.best_technique.metadata.get("auto") is True
+
+
+def test_setenv_perl5opt_auto():
+    finding = Finding(
+        vector=VectorType.SUDO,
+        path="/usr/bin/perl",
+        executable="perl",
+        details="cmd=/usr/bin/perl /dev/null; runas=root; nopasswd=True; setenv=True; user=student",
+        severity="critical",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    codes = [t.code for t in finding.techniques]
+    assert any("PERL5OPT" in c for c in codes)
+    perl_setenv = next(t for t in finding.techniques if "PERL5OPT" in t.code)
+    assert perl_setenv.metadata.get("auto") is True
+
+
+def test_setenv_awk_ld_preload_auto():
+    finding = Finding(
+        vector=VectorType.SUDO,
+        path="/usr/bin/awk",
+        executable="awk",
+        details="cmd=/usr/bin/awk; runas=root; nopasswd=True; setenv=True; user=student",
+        severity="critical",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert "LD_PRELOAD" in finding.best_technique.code
+    assert "gcc" in finding.best_technique.code

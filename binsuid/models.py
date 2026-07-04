@@ -7,9 +7,13 @@ from typing import Any
 
 class VectorType(str, Enum):
     SUID = "suid"
+    SGID = "sgid"
     CAPABILITIES = "capabilities"
     PROCESS_CAPABILITIES = "process-capabilities"
     SUDO = "sudo"
+    PATH_HIJACK = "path-hijack"
+    PERSISTENCE = "persistence"
+    GROUP = "group"
 
 
 # Functions most relevant for privilege escalation (ordered by priority).
@@ -74,6 +78,12 @@ class Finding:
             return self.path
         if self.vector == VectorType.SUDO:
             return f"{self.path} ({self.details})"
+        if self.vector == VectorType.PATH_HIJACK:
+            return f"{self.path} ({self.details})"
+        if self.vector == VectorType.PERSISTENCE:
+            return f"{self.path} ({self.details})"
+        if self.vector == VectorType.GROUP:
+            return f"{self.executable} ({self.details})"
         return self.path
 
 

@@ -11,6 +11,16 @@ def test_detect_path_hijack_split_strings():
     assert detect_from_strings(sample) == "tar"
 
 
+def test_detect_path_hijack_popen():
+    sample = 'popen("curl -s http://127.0.0.1/ | sh")\n'
+    assert detect_from_strings(sample) == "curl"
+
+
+def test_detect_path_hijack_execlp():
+    sample = 'execlp("wget", "wget", "-q", NULL);\n'
+    assert detect_from_strings(sample) == "wget"
+
+
 def test_path_hijack_payload():
     code = path_hijack_payload(suid_path="/usr/local/bin/backup", command="tar")
     assert "/usr/local/bin/backup" in code

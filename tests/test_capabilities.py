@@ -5,6 +5,7 @@ from binsuid.capabilities.knowledge import (
 from binsuid.utils import (
     bump_severity,
     explain_capability_flags,
+    is_suspicious_capability_path,
     parse_capability_flags,
     parse_capability_string,
 )
@@ -63,3 +64,10 @@ def test_net_bind_service_technique():
 def test_severity_order():
     assert severity_for_caps(["CAP_NET_RAW"]) == "low"
     assert severity_for_caps(["CAP_NET_RAW", "CAP_SETUID"]) == "critical"
+
+
+def test_suspicious_capability_paths():
+    assert is_suspicious_capability_path("/opt/backdoor")
+    assert is_suspicious_capability_path("/tmp/evil")
+    assert is_suspicious_capability_path("/home/user/bin")
+    assert not is_suspicious_capability_path("/usr/bin/python3")

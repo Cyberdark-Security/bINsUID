@@ -5,7 +5,16 @@ from binsuid.exploit.builtin import builtin_techniques_for
 from binsuid.exploit.selector import attach_best_techniques
 from binsuid.gtfobins import GTFOBinsDatabase, enrich_findings
 from binsuid.models import ScanResult, VectorType
-from binsuid.scanner import scan_capabilities, scan_process_capabilities, scan_sudo, scan_suid
+from binsuid.scanner import (
+    scan_capabilities,
+    scan_groups,
+    scan_persistence,
+    scan_process_capabilities,
+    scan_sgid,
+    scan_sudo,
+    scan_suid,
+    scan_writable_path,
+)
 
 
 def _sort_techniques(techniques: list) -> list:
@@ -54,9 +63,13 @@ def run_scan(
     *,
     quick: bool = False,
     skip_suid: bool = False,
+    skip_sgid: bool = False,
     skip_capabilities: bool = False,
     skip_process_capabilities: bool = True,
     skip_sudo: bool = False,
+    skip_path_audit: bool = False,
+    skip_persistence: bool = False,
+    skip_groups: bool = False,
     sudo_interactive: bool = False,
     audit_suspicious_paths: bool = True,
     database: GTFOBinsDatabase | None = None,
@@ -66,6 +79,9 @@ def run_scan(
 
     if not skip_suid:
         result.findings.extend(scan_suid(quick=quick))
+
+    if not skip_sgid:
+        result.findings.extend(scan_sgid(quick=quick))
 
     if not skip_capabilities:
         cap_findings, cap_errors = scan_capabilities(
@@ -85,14 +101,30 @@ def run_scan(
         result.findings.extend(sudo_findings)
         result.errors.extend(sudo_errors)
 
+    if not skip_path_audit:
+        result.findings.extend(scan_writable_path())
+
+    if not skip_persistence:
+        persist_findings, persist_errors = scan_persistence()
+        result.findings.extend(persist_findings)
+        result.errors.extend(persist_errors)
+
+    if not skip_groups:
+        result.findings.extend(scan_groups())
+
     enrich_findings(
-        [f for f in result.findings if f.vector != VectorType.CAPABILITIES],
+        [
+            f for f in result.findings
+            if f.vector not in {VectorType.CAPABILITIES, VectorType.PATH_HIJACK,
+                                VectorType.PERSISTENCE, VectorType.GROUP}
+        ],
         db,
     )
     _enrich_capability_findings(result.findings, db)
 
     for finding in result.findings:
-        if finding.vector == VectorType.PROCESS_CAPABILITIES:
+        if finding.vector in {VectorType.PROCESS_CAPABILITIES, VectorType.PATH_HIJACK,
+                              VectorType.PERSISTENCE, VectorType.GROUP}:
             continue
         builtins = builtin_techniques_for(finding)
         finding.techniques = _merge_techniques(builtins, finding.techniques)
