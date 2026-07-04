@@ -13,6 +13,12 @@ def test_json_and_scan_only_can_be_combined():
     assert not args.auto
 
 
+def test_version_flag():
+    from binsuid import __version__
+
+    assert __version__ == "1.1.0"
+
+
 def _exploitable_finding() -> Finding:
     tech = Technique(
         executable="find",

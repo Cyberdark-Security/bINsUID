@@ -1,9 +1,9 @@
 Source: binsuid
 Section: utils
 Priority: optional
-Maintainer: Cyberdark Security <security@cyberdark.local>
+Maintainer: Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Homepage: https://github.com/Cyberdark-Security/bINsUID
 Vcs-Browser: https://github.com/Cyberdark-Security/bINsUID
@@ -16,8 +16,6 @@ Depends:
  ${misc:Depends},
  libcap2-bin,
  sudo,
-Description: SUID, capabilities and sudo scanner with GTFOBins exploitation menu
- bINsUID automates the enumeration of SUID binaries, dangerous file
- capabilities, and sudo permissions. Findings are matched against a bundled
- offline GTFOBins database and can be exploited through an interactive menu
- for authorized training and penetration testing.
+Description: automatic SUID, SGID, capabilities and sudo privilege escalation
+ bINsUID automates enumeration and exploitation of common Linux privilege
+ escalation vectors for authorized penetration testing and training.

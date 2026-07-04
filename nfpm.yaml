@@ -5,10 +5,10 @@ platform: linux
 version: "${BINSUID_VERSION}"
 section: utils
 priority: optional
-maintainer: "Cyberdark Security <security@cyberdark.local>"
+maintainer: "Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>"
 description: |
-  SUID, capabilities and sudo scanner with GTFOBins and HackTricks
-  exploitation menu for authorized security training and assessments.
+  Automatic SUID, SGID, capabilities and sudo privilege escalation for
+  authorized penetration testing, CTF challenges, and security training.
 homepage: "https://github.com/Cyberdark-Security/bINsUID"
 license: "GPL-3.0-or-later"
 contents:

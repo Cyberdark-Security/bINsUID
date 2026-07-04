@@ -3,12 +3,15 @@ import stat
 import tempfile
 from unittest.mock import patch
 
+import pytest
+
 from binsuid.exploit.builtin import builtin_techniques_for
 from binsuid.exploit.selector import attach_best_techniques
 from binsuid.models import Finding, VectorType
 from binsuid.scanner.sgid import _is_sgid, scan_sgid
 
 
+@pytest.mark.linux
 def test_is_sgid_detects_setgid_bit():
     if os.name != "posix":
         with patch("binsuid.scanner.sgid.os.stat") as mock_stat:

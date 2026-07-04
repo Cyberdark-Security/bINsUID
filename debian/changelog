@@ -6,3 +6,9 @@ binsuid (1.1.0-1) kali-dev; urgency=medium
   * JSON exit codes for scripting; update man page and packaging metadata
 
  -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Fri, 03 Jul 2026 20:00:00 +0000
+
+binsuid (1.0.0-1) kali-dev; urgency=medium
+
+  * Initial release: automatic SUID, capabilities and sudo privilege escalation
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Thu, 02 Jul 2026 12:00:00 +0000

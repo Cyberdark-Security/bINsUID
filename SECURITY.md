@@ -4,11 +4,12 @@
 
 | Version | Supported |
 | ------- | --------- |
+| 1.1.x   | Yes       |
 | 1.0.x   | Yes       |
 
 ## Reporting a vulnerability
 
-Email **security@cyberdark.local** or open a private security advisory on GitHub.
+Report vulnerabilities via a [private GitHub Security Advisory](https://github.com/Cyberdark-Security/bINsUID/security/advisories/new).
 
 Please include:
 
@@ -27,4 +28,4 @@ Do not run bINsUID on systems without explicit written permission.
 
 - Confirmation prompt before escalation (bypass with `-y` only when intended)
 - Dry-run mode (`--dry-run`) for classroom demonstrations
-- JSON output (`--json`) for automation without interactive prompts
+- JSON output (`--json --scan-only`) for automation without interactive prompts

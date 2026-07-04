@@ -33,11 +33,18 @@ binsuid --auto --dry-run -y  # preview command only
 
 ## What it does
 
-- Finds SUID binaries, dangerous capabilities, and sudo rules
+- Finds SUID/SGID binaries, dangerous capabilities, sudo rules (incl. SETENV), writable PATH, cron surfaces, and privileged groups
 - **Highlights the lab target** (hides standard system SUID noise)
 - Suggests the next command (`binsuid --auto -y`)
-- Built-in payloads for 40+ binaries + PATH hijack detection
+- Built-in payloads for 50+ binaries + PATH hijack detection
 - Offline GTFOBins data — no internet needed after download
+
+## Scripting
+
+```bash
+binsuid --json --scan-only --quick   # exit 1 when auto-exploitable targets exist
+binsuid --scan-only --skip-sudo --skip-capabilities --quick
+```
 
 ## Requirements
 

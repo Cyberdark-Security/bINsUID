@@ -1,0 +1,30 @@
+Source: binsuid
+Section: utils
+Priority: optional
+Maintainer: Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/Cyberdark-Security/bINsUID
+Vcs-Browser: https://github.com/Cyberdark-Security/bINsUID
+Vcs-Git: https://github.com/Cyberdark-Security/bINsUID.git
+Testsuite: autopkgtest-pkg-pybuild
+
+Package: binsuid
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         libcap2-bin,
+         sudo
+Description: automatic SUID, SGID, capabilities and sudo privilege escalation
+ bINsUID automates enumeration and exploitation of common Linux privilege
+ escalation vectors: SUID/SGID binaries, file and process capabilities,
+ passwordless sudo rules (including SETENV), writable PATH directories,
+ cron persistence surfaces, and privileged group membership.
+ .
+ Findings are ranked for lab relevance and matched against bundled offline
+ GTFOBins data with built-in automatic payloads. Intended for authorized
+ penetration testing, CTF challenges, and security training.

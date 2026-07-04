@@ -1,4 +1,4 @@
-"""bINsUID — SUID, capabilities and sudo scanner with GTFOBins exploitation menu."""
+"""bINsUID — automatic Linux privilege escalation for authorized testing."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Cyberdark Security"

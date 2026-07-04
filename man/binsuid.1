@@ -1,12 +1,14 @@
-.TH BINSUID 1 "July 2026" "binsuid 1.0.0" "User Commands"
+.TH BINSUID 1 "July 2026" "binsuid 1.1.0" "User Commands"
 .SH NAME
-binsuid \- automatic SUID, capabilities and sudo privilege escalation
+binsuid \- automatic SUID, SGID, capabilities and sudo privilege escalation
 .SH SYNOPSIS
 .B binsuid
 [\fIOPTIONS\fR]
 .SH DESCRIPTION
-\fBbinsuid\fR scans Linux systems for exploitable SUID binaries, dangerous file
-capabilities, and sudo misconfigurations, then performs automatic privilege
+\fBbinsuid\fR scans Linux systems for exploitable SUID and SGID binaries, dangerous
+file and process capabilities, sudo misconfigurations (including SETENV rules),
+writable PATH directories, cron persistence surfaces, and privileged group
+membership. It ranks lab-relevant targets, then performs automatic privilege
 escalation with built-in payloads. No manual command editing is required.
 .PP
 Intended for authorized penetration testing, CTF challenges, and security training.
@@ -25,13 +27,19 @@ Limit filesystem enumeration to common binary directories.
 Scan and list vulnerable targets without offering escalation.
 .TP
 .B \-\-json
-Print machine-readable JSON output.
+Print machine-readable JSON output. With \fB\-\-scan-only\fR, exit status is
+.B 1
+when auto-exploitable targets exist, otherwise
+.BR 0 .
 .TP
 .B \-\-silent
 Print a one-line summary only.
 .TP
 .B \-\-concise
 Compact one-line-per-target listing.
+.TP
+.B \-\-show-all
+Include low-interest system SUID binaries in listings.
 .TP
 .B \-\-no-color
 Disable ANSI color output.
@@ -42,20 +50,43 @@ Show escalation plan without executing.
 .B \-\-skip-suid
 Skip SUID enumeration.
 .TP
+.B \-\-skip-sgid
+Skip SGID enumeration.
+.TP
 .B \-\-skip-capabilities
 Skip file capability enumeration.
 .TP
 .B \-\-scan-process-caps
 Include process capability enumeration.
 .TP
+.B \-\-no-suspicious-paths
+Skip extra suspicious paths (/opt, /tmp, /home) in quick mode.
+.TP
 .B \-\-skip-sudo
 Skip sudo rule enumeration.
+.TP
+.B \-\-skip-path-audit
+Skip writable PATH directory audit.
+.TP
+.B \-\-skip-persistence
+Skip cron persistence audit.
+.TP
+.B \-\-skip-groups
+Skip privileged group membership hints.
 .TP
 .B \-\-sudo-interactive
 Run \fBsudo \-l\fR with password prompt.
 .TP
 .B \-V, \-\-version
 Show version information.
+.SH EXIT STATUS
+.TP
+.B 0
+Success, or \fB\-\-json \-\-scan-only\fR with no auto-exploitable targets.
+.TP
+.B 1
+No exploitable targets found, or \fB\-\-json \-\-scan-only\fR with auto-exploitable
+targets present.
 .SH EXAMPLES
 Interactive escalation:
 .PP
@@ -69,10 +100,16 @@ Fully automatic:
 binsuid \-\-auto \-y
 .RE
 .PP
-Scripting:
+Scripting (exit 1 when targets exist):
 .PP
 .RS
-binsuid \-\-json \-\-scan-only
+binsuid \-\-json \-\-scan-only \-\-quick
+.RE
+.PP
+Fast lab scan without sudo/capabilities:
+.PP
+.RS
+binsuid \-\-scan-only \-\-quick \-\-skip-sudo \-\-skip-capabilities
 .RE
 .SH FILES
 .TP
