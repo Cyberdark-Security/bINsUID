@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — privesc recon and auto-exploit without Python.
 # Usage: binsuid-scan.sh [--quick] [--scan-only] [--auto] [-y] ...
-VERSION="1.2.2"
+VERSION="1.2.3"
 
 QUICK=0
 SILENT=0

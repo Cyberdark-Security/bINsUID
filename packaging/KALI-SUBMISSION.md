@@ -12,7 +12,33 @@
 - [x] GitHub Actions CI (pytest + smoke test)
 - [x] Tagged releases with `.deb`, wheel, sdist
 
-## Submit to kalilinux/packages
+## Verify packaging (Kali / Debian)
+
+Use tag **v1.2.3** or later (v1.2.2 tag has invalid `debian/changelog` maintainer metadata).
+
+```bash
+git clone https://github.com/Cyberdark-Security/bINsUID.git
+cd bINsUID
+git checkout v1.2.3
+
+sudo apt install -y devscripts debhelper dh-python python3-all python3-pip
+make test
+dpkg-buildpackage -us -uc -b
+
+sudo dpkg -i ../binsuid_*_all.deb
+binsuid --version
+binsuid --scan-only
+```
+
+## Submit to bugs.kali.org
+
+1. Open https://bugs.kali.org → **Report Issue**
+2. Category: **New Tool Requests**
+3. Summary: `binsuid - automatic Linux privilege escalation scanner`
+4. Use version **1.2.3** and release URL:
+   `https://github.com/Cyberdark-Security/bINsUID/releases/tag/v1.2.3`
+
+## Submit to kalilinux/packages (after acceptance)
 
 1. Fork https://gitlab.com/kalilinux/packages
 2. Add `binsuid/` using `debian/` from this repo.
@@ -32,11 +58,14 @@ Description: automatic SUID/SGID/capabilities/sudo privilege escalation
 
 ```bash
 make test
-git tag v1.2.2 && git push origin v1.2.2
+git tag v1.2.3 && git push origin v1.2.3
 ```
+
+GitHub Actions builds `.deb`, `.rpm`, wheel, and sdist on tag push.
 
 ## Notes
 
 - Kali package ships the **Python CLI** via `debian/` (dh-python).
 - Bash scanner (`scripts/binsuid-scan.sh`) is installed by the curl installer, not the `.deb`.
 - Use `debian/changelog` as the authoritative packaging changelog.
+- Maintainer email must be a valid RFC address (`ing.mauricio1983@gmail.com`), not a URL.

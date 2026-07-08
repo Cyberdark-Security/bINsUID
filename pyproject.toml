@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "binsuid"
-version = "1.2.2"
+version = "1.2.3"
 description = "Automatic SUID, SGID, capabilities and sudo privilege escalation for Linux"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }

@@ -1,3 +1,9 @@
+binsuid (1.2.3-1) kali-dev; urgency=medium
+
+  * Kali packaging release: maintainer email and build workflow fixes
+
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:30:00 +0000
+
 binsuid (1.2.2-1) kali-dev; urgency=medium
 
   * Unified scan-then-choose flow; documentation and packaging sync

@@ -100,10 +100,19 @@ bash binsuid-scan.sh --quick --auto -y      # auto after scan
 ```bash
 git clone https://github.com/Cyberdark-Security/bINsUID.git
 cd bINsUID
+git checkout v1.2.3
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-pytest
+make test
+```
+
+### Build Debian package
+
+```bash
+sudo apt install -y devscripts debhelper dh-python python3-all
+dpkg-buildpackage -us -uc -b
+sudo dpkg -i ../binsuid_*_all.deb
 ```
 
 ---

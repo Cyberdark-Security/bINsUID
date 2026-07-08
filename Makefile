@@ -1,14 +1,17 @@
 BINARY=binsuid
 VERSION=$(shell python -c "from binsuid import __version__; print(__version__)")
 
-.PHONY: all install test test-short build build-deb build-rpm clean man update-gtfobins version
+.PHONY: all install dev test test-short build build-deb build-rpm clean man update-gtfobins version
 
 all: test build
 
 install:
 	pip install -e .
 
-test:
+dev:
+	pip install -e ".[dev]"
+
+test: dev
 	pytest -v
 
 test-short:

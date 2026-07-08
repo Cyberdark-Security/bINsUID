@@ -1,3 +1,11 @@
+binsuid (1.2.3-1) kali-dev; urgency=medium
+
+  * Kali packaging release: valid debian/changelog maintainer email
+  * make test installs dev dependencies automatically
+  * nfpm maintainer metadata aligned with debian/control
+
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:30:00 +0000
+
 binsuid (1.2.2-1) kali-dev; urgency=medium
 
   * Unified scan-then-choose flow in bash scanner (m/a/q prompt)
