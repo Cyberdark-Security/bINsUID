@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — privesc recon and auto-exploit without Python.
 # Usage: binsuid-scan.sh [--quick] [--auto|-i] [-y] [--dry-run] ...
-VERSION="1.2.0"
+VERSION="1.2.1"
 
 QUICK=0
 SILENT=0
@@ -12,6 +12,7 @@ INTERACTIVE=0
 ASSUME_YES=0
 DRY_RUN=0
 LAUNCH_SHELL=0
+menu_bin=0 menu_path=0 menu_group=0 menu_sudo=0 menu_caps=0 menu_cron=0 MENU_MAX=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -362,26 +363,147 @@ auto_escalate() {
 
 exploit_binaries() {
   p ""
-  p "${CYAN}${BOLD}>>> SUID / SGID${RESET}"
-  if [ -n "$SUID_PRIORITY" ]; then
-    local bin old_ifs
-    old_ifs="$IFS"
-    IFS=$'\n'
-    for bin in $SUID_PRIORITY; do
-      [ -n "$bin" ] && try_suid_binary "$bin" && { IFS="$old_ifs"; return 0; }
-    done
-    IFS="$old_ifs"
-    p "${YELLOW}[-] No auto SUID payload worked for listed binaries.${RESET}"
-  else
-    p "${DIM}  No custom SUID targets.${RESET}"
+  p "${CYAN}${BOLD}>>> SUID binaries${RESET}"
+  if [ -z "$SUID_PRIORITY" ]; then
+    p "${DIM}  No custom SUID targets to auto-exploit.${RESET}"
+    return 1
   fi
-  if [ -n "$SGID_FOUND" ]; then
-    p "${YELLOW}[!] SGID binaries (manual / GTFOBins):${RESET}"
-    echo "$SGID_FOUND" | while IFS= read -r s; do
-      [ -n "$s" ] && p "  $s"
-    done
-  fi
+  local bin old_ifs
+  old_ifs="$IFS"
+  IFS=$'\n'
+  for bin in $SUID_PRIORITY; do
+    [ -n "$bin" ] && try_suid_binary "$bin" && { IFS="$old_ifs"; return 0; }
+  done
+  IFS="$old_ifs"
+  p "${YELLOW}[-] No auto SUID payload worked for listed binaries.${RESET}"
   return 1
+}
+
+menu_hint() {
+  if [ -n "$GROUP_FOUND" ] && member_of_group docker; then
+    p "${CYAN}  Tip: try ${BOLD}Privileged groups${RESET}${CYAN} or ${BOLD}a${RESET}${CYAN} (auto).${RESET}"
+  elif [ -n "$SUID_PRIORITY" ]; then
+    p "${CYAN}  Tip: try ${BOLD}SUID binaries${RESET}${CYAN} or ${BOLD}a${RESET}${CYAN} (auto).${RESET}"
+  fi
+}
+
+show_escalation_menu() {
+  local max=0
+  menu_bin=0 menu_path=0 menu_group=0 menu_sudo=0 menu_caps=0 menu_cron=0
+
+  p ""
+  p "${CYAN}${BOLD}>>> Escalation menu${RESET}"
+  p "${DIM}  Pick a vector, or ${BOLD}a${RESET}${DIM} for automatic (best first).${RESET}"
+
+  if [ -n "$SUID_PRIORITY" ]; then
+    max=$((max + 1)); menu_bin=$max
+    p "  ${BOLD}$max${RESET}) SUID binaries  ${DIM}($(count_lines "$SUID_PRIORITY") auto targets)${RESET}"
+  fi
+  if [ -n "$PATH_FOUND" ]; then
+    max=$((max + 1)); menu_path=$max
+    p "  ${BOLD}$max${RESET}) Writable PATH  ${DIM}($(count_lines "$PATH_FOUND") dirs — hijack guide)${RESET}"
+  fi
+  if [ -n "$GROUP_FOUND" ]; then
+    max=$((max + 1)); menu_group=$max
+    p "  ${BOLD}$max${RESET}) Privileged groups  ${DIM}(docker, lxd — auto)${RESET}"
+  fi
+  if [ -n "$SUDO_OUT" ]; then
+    max=$((max + 1)); menu_sudo=$max
+    p "  ${BOLD}$max${RESET}) Sudo rules"
+  fi
+  if [ -n "$CAP_FOUND" ]; then
+    max=$((max + 1)); menu_caps=$max
+    p "  ${BOLD}$max${RESET}) Capabilities  ${DIM}(manual)${RESET}"
+  fi
+  if [ -n "$CRON_FOUND" ]; then
+    max=$((max + 1)); menu_cron=$max
+    p "  ${BOLD}$max${RESET}) Writable cron  ${DIM}(manual)${RESET}"
+  fi
+
+  p "  ${BOLD}a${RESET}) Auto — try best vector first"
+  p "  ${BOLD}q${RESET}) Quit"
+  MENU_MAX=$max
+}
+
+interactive_menu() {
+  local choice=0
+
+  if [ -z "$SUID_PRIORITY" ] && [ -z "$PATH_FOUND" ] && [ -z "$GROUP_FOUND" ] \
+     && [ -z "$SUDO_OUT" ] && [ -z "$CAP_FOUND" ] && [ -z "$CRON_FOUND" ]; then
+    p "${YELLOW}[-] No escalation targets in menu.${RESET}"
+    return 1
+  fi
+
+  if [ -n "$SGID_FOUND" ] && [ -z "$SUID_PRIORITY" ]; then
+    p "${DIM}  SGID binaries are listed above — system noise, not auto-exploitable here.${RESET}"
+  fi
+
+  while true; do
+    show_escalation_menu
+
+    if [ "$MENU_MAX" -eq 0 ]; then
+      p "${YELLOW}[-] No auto targets — use ${BOLD}a${RESET}${YELLOW} or install python3 binsuid.${RESET}"
+      printf "${CYAN}Select [a / q]: ${RESET}"
+    else
+      printf "${CYAN}Select [1-%s / a / q]: ${RESET}" "$MENU_MAX"
+    fi
+
+    if ! IFS= read -r choice; then
+      p "${DIM}  EOF — exiting menu.${RESET}"
+      return 0
+    fi
+
+    case "$choice" in
+      q|Q)
+        p "${DIM}  Quit — scan results kept above.${RESET}"
+        return 0
+        ;;
+      a|A)
+        LAUNCH_SHELL=1
+        if auto_escalate; then
+          return 0
+        fi
+        p ""
+        p "${DIM}  Auto failed — back to menu.${RESET}"
+        menu_hint
+        continue
+        ;;
+    esac
+
+    if [ "$menu_bin" -gt 0 ] && [ "$choice" = "$menu_bin" ]; then
+      LAUNCH_SHELL=1
+      exploit_binaries && return 0
+      p ""; p "${DIM}  Back to menu.${RESET}"; menu_hint; continue
+    fi
+    if [ "$menu_path" -gt 0 ] && [ "$choice" = "$menu_path" ]; then
+      exploit_path
+      p ""; p "${DIM}  Back to menu.${RESET}"; menu_hint; continue
+    fi
+    if [ "$menu_group" -gt 0 ] && [ "$choice" = "$menu_group" ]; then
+      LAUNCH_SHELL=1
+      exploit_groups && return 0
+      p ""; p "${DIM}  Back to menu.${RESET}"; continue
+    fi
+    if [ "$menu_sudo" -gt 0 ] && [ "$choice" = "$menu_sudo" ]; then
+      LAUNCH_SHELL=1
+      exploit_sudo && return 0
+      p ""; p "${DIM}  Back to menu.${RESET}"; continue
+    fi
+    if [ "$menu_caps" -gt 0 ] && [ "$choice" = "$menu_caps" ]; then
+      exploit_capabilities
+      p ""; p "${DIM}  Back to menu.${RESET}"; continue
+    fi
+    if [ "$menu_cron" -gt 0 ] && [ "$choice" = "$menu_cron" ]; then
+      exploit_cron
+      p ""; p "${DIM}  Back to menu.${RESET}"; continue
+    fi
+
+    if [ "$MENU_MAX" -eq 0 ]; then
+      p "${RED}  Invalid. Enter a or q.${RESET}"
+    else
+      p "${RED}  Invalid. Enter 1-$MENU_MAX, a, or q.${RESET}"
+    fi
+  done
 }
 
 exploit_path() {
@@ -452,82 +574,6 @@ exploit_cron() {
   done
   p "${DIM}  Edit script before next cron run to execute your payload.${RESET}"
   return 1
-}
-
-interactive_menu() {
-  local max=0
-  local menu_bin=0 menu_path=0 menu_group=0 menu_sudo=0 menu_caps=0 menu_cron=0
-
-  p ""
-  p "${CYAN}${BOLD}>>> Escalation menu${RESET}"
-  p "${DIM}  Pick a vector, or ${BOLD}a${RESET}${DIM} for automatic (best first).${RESET}"
-
-  if [ -n "$SUID_PRIORITY" ] || [ -n "$SGID_FOUND" ]; then
-    max=$((max + 1)); menu_bin=$max
-    p "  ${BOLD}$max${RESET}) SUID / SGID binaries  ${DIM}($(count_lines "$SUID_PRIORITY") SUID, $(count_lines "$SGID_FOUND") SGID)${RESET}"
-  fi
-  if [ -n "$PATH_FOUND" ]; then
-    max=$((max + 1)); menu_path=$max
-    p "  ${BOLD}$max${RESET}) Writable PATH  ${DIM}($(count_lines "$PATH_FOUND") dirs)${RESET}"
-  fi
-  if [ -n "$GROUP_FOUND" ]; then
-    max=$((max + 1)); menu_group=$max
-    p "  ${BOLD}$max${RESET}) Privileged groups  ${DIM}(docker, lxd…)${RESET}"
-  fi
-  if [ -n "$SUDO_OUT" ]; then
-    max=$((max + 1)); menu_sudo=$max
-    p "  ${BOLD}$max${RESET}) Sudo rules"
-  fi
-  if [ -n "$CAP_FOUND" ]; then
-    max=$((max + 1)); menu_caps=$max
-    p "  ${BOLD}$max${RESET}) Capabilities"
-  fi
-  if [ -n "$CRON_FOUND" ]; then
-    max=$((max + 1)); menu_cron=$max
-    p "  ${BOLD}$max${RESET}) Writable cron scripts"
-  fi
-
-  p "  ${BOLD}a${RESET}) Auto — try best vector first"
-  p "  ${BOLD}q${RESET}) Quit (recon only)"
-
-  if [ "$max" -eq 0 ]; then
-    p "${YELLOW}[-] No escalation targets to choose.${RESET}"
-    return 1
-  fi
-
-  while true; do
-    if [ -t 0 ]; then
-      printf "${CYAN}Select [1-%s / a / q]: ${RESET}" "$max"
-      IFS= read -r choice || choice="q"
-    else
-      p "${YELLOW}[-] No TTY — use --auto -y for non-interactive escalation.${RESET}"
-      return 1
-    fi
-
-    case "$choice" in
-      q|Q) return 1 ;;
-      a|A)
-        LAUNCH_SHELL=1
-        auto_escalate
-        return $?
-        ;;
-    esac
-
-    if [ "$menu_bin" -gt 0 ] && [ "$choice" = "$menu_bin" ]; then
-      LAUNCH_SHELL=1; exploit_binaries; return $?; fi
-    if [ "$menu_path" -gt 0 ] && [ "$choice" = "$menu_path" ]; then
-      exploit_path; return 1; fi
-    if [ "$menu_group" -gt 0 ] && [ "$choice" = "$menu_group" ]; then
-      LAUNCH_SHELL=1; exploit_groups; return $?; fi
-    if [ "$menu_sudo" -gt 0 ] && [ "$choice" = "$menu_sudo" ]; then
-      LAUNCH_SHELL=1; exploit_sudo; return $?; fi
-    if [ "$menu_caps" -gt 0 ] && [ "$choice" = "$menu_caps" ]; then
-      exploit_capabilities; return 1; fi
-    if [ "$menu_cron" -gt 0 ] && [ "$choice" = "$menu_cron" ]; then
-      exploit_cron; return 1; fi
-
-    p "${RED}  Invalid choice. Enter 1-$max, a, or q.${RESET}"
-  done
 }
 
 # --- run scans ---
@@ -644,7 +690,7 @@ fi
 
 if [ "$INTERACTIVE" -eq 1 ]; then
   interactive_menu
-  exit $?
+  exit 0
 fi
 
 [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0
