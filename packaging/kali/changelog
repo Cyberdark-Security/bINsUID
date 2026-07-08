@@ -1,3 +1,10 @@
+binsuid (1.2.4-1) kali-dev; urgency=medium
+
+  * Debian packaging: drop debian/compat duplicate
+  * Developer tests via venv (Kali PEP 668)
+
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:45:00 +0000
+
 binsuid (1.2.3-1) kali-dev; urgency=medium
 
   * Kali packaging release: maintainer email and build workflow fixes

@@ -1,3 +1,10 @@
+binsuid (1.2.4-1) kali-dev; urgency=medium
+
+  * Remove debian/compat (debhelper-compat in control is sufficient)
+  * make test uses a local venv (PEP 668 / Kali compatible)
+
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:45:00 +0000
+
 binsuid (1.2.3-1) kali-dev; urgency=medium
 
   * Kali packaging release: valid debian/changelog maintainer email

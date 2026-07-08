@@ -14,14 +14,14 @@
 
 ## Verify packaging (Kali / Debian)
 
-Use tag **v1.2.3** or later (v1.2.2 tag has invalid `debian/changelog` maintainer metadata).
+Use tag **v1.2.4** or later.
 
 ```bash
 git clone https://github.com/Cyberdark-Security/bINsUID.git
 cd bINsUID
-git checkout v1.2.3
+git checkout v1.2.4
 
-sudo apt install -y devscripts debhelper dh-python python3-all python3-pip
+sudo apt install -y devscripts debhelper dh-python python3-all python3-venv
 make test
 dpkg-buildpackage -us -uc -b
 
@@ -35,8 +35,8 @@ binsuid --scan-only
 1. Open https://bugs.kali.org → **Report Issue**
 2. Category: **New Tool Requests**
 3. Summary: `binsuid - automatic Linux privilege escalation scanner`
-4. Use version **1.2.3** and release URL:
-   `https://github.com/Cyberdark-Security/bINsUID/releases/tag/v1.2.3`
+4. Use version **1.2.4** and release URL:
+   `https://github.com/Cyberdark-Security/bINsUID/releases/tag/v1.2.4`
 
 ## Submit to kalilinux/packages (after acceptance)
 
@@ -58,7 +58,7 @@ Description: automatic SUID/SGID/capabilities/sudo privilege escalation
 
 ```bash
 make test
-git tag v1.2.3 && git push origin v1.2.3
+git tag v1.2.4 && git push origin v1.2.4
 ```
 
 GitHub Actions builds `.deb`, `.rpm`, wheel, and sdist on tag push.

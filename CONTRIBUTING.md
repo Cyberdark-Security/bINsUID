@@ -7,9 +7,10 @@ Thank you for helping improve bINsUID.
 ```bash
 git clone https://github.com/Cyberdark-Security/bINsUID.git
 cd bINsUID
-pip install -e ".[dev]"
 make test
 ```
+
+`make test` creates a local `.venv` automatically (required on Kali due to PEP 668).
 
 ## Guidelines
 
