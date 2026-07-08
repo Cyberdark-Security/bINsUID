@@ -24,8 +24,9 @@ source ~/.bashrc
 
   # Vuelve a devops@breach:
   bash /tmp/binsuid-scan.sh --quick
-  bash /tmp/binsuid-scan.sh --auto -y         # automático: mejor vector primero
-  bash /tmp/binsuid-scan.sh --interactive     # menú: eliges binarios, PATH, docker…
+  # Tras el scan pregunta: m=menú, a=automático, q=salir
+  bash /tmp/binsuid-scan.sh --quick --auto -y   # sin preguntar, auto directo
+  bash /tmp/binsuid-scan.sh --quick --scan-only # solo recon, sin prompt
 
   (Solo necesita bash + find dentro del lab. No instala nada.)
 

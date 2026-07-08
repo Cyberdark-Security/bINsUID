@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — privesc recon and auto-exploit without Python.
-# Usage: binsuid-scan.sh [--quick] [--auto|-i] [-y] [--dry-run] ...
-VERSION="1.2.1"
+# Usage: binsuid-scan.sh [--quick] [--scan-only] [--auto] [-y] ...
+VERSION="1.2.2"
 
 QUICK=0
 SILENT=0
+SCAN_ONLY=0
 NO_COLOR=0
 DEBUG=0
 AUTO=0
@@ -24,7 +25,8 @@ for arg in "$@"; do
     --interactive|-i) INTERACTIVE=1 ;;
     -y|--yes) ASSUME_YES=1; LAUNCH_SHELL=1 ;;
     --dry-run) DRY_RUN=1; AUTO=1 ;;
-    --scan-only|--version|-V|-h|--help) ;;
+    --scan-only) SCAN_ONLY=1 ;;
+    --version|-V|-h|--help) ;;
     --json)
       echo "[-] --json needs python3 (binsuid --json --scan-only)." >&2
       exit 1
@@ -39,14 +41,13 @@ for arg in "$@"; do
       ;;
     -V|--version) echo "binsuid-scan $VERSION (bash mode)"; exit 0 ;;
     -h|--help)
-      echo "binsuid-scan $VERSION — bash privesc recon + auto-exploit"
-      echo "  --quick  --auto  --interactive|-i  -y  --dry-run  --silent  --no-color"
+      echo "binsuid-scan $VERSION — scan vectors, then menu or auto"
+      echo "  --quick  --scan-only  --auto  -y  --dry-run  --silent  --no-color"
       echo ""
       echo "Examples:"
-      echo "  binsuid-scan.sh --quick              # recon only"
-      echo "  binsuid-scan.sh --auto -y            # auto: best vector first"
-      echo "  binsuid-scan.sh --interactive        # menu: pick vector (1,2,3…)"
-      echo "  binsuid-scan.sh -i -y                # menu then launch shell on success"
+      echo "  binsuid-scan.sh --quick        # scan → ask: menu (m) or auto (a)"
+      echo "  binsuid-scan.sh --quick --scan-only   # recon only, no prompt"
+      echo "  binsuid-scan.sh --quick --auto -y    # scan → auto-escalate"
       exit 0
       ;;
     *) echo "Unknown option: $arg" >&2; exit 2 ;;
@@ -506,6 +507,37 @@ interactive_menu() {
   done
 }
 
+post_scan_choice() {
+  p ""
+  p "${CYAN}${BOLD}>>> Next step${RESET}"
+  p "${DIM}  Vectors found — choose how to escalate.${RESET}"
+  p "  ${BOLD}m${RESET}) Menu — pick a vector (1, 2, 3…)"
+  p "  ${BOLD}a${RESET}) Auto — try best vector first"
+  p "  ${BOLD}q${RESET}) Quit — keep scan results only"
+  while true; do
+    printf "${CYAN}Escalate? [m / a / q]: ${RESET}"
+    IFS= read -r choice || { p "${DIM}  Quit.${RESET}"; return 0; }
+    case "$choice" in
+      q|Q)
+        p "${DIM}  Quit — results above.${RESET}"
+        return 0
+        ;;
+      a|A)
+        LAUNCH_SHELL=1
+        auto_escalate
+        return $?
+        ;;
+      m|M)
+        interactive_menu
+        return 0
+        ;;
+      *)
+        p "${RED}  Enter m (menu), a (auto), or q (quit).${RESET}"
+        ;;
+    esac
+  done
+}
+
 exploit_path() {
   p ""
   p "${CYAN}${BOLD}>>> Writable PATH${RESET}"
@@ -599,11 +631,13 @@ p "${CYAN}==============================================${RESET}"
 p "${BOLD}  bINsUID scan (bash ${CYAN}$VERSION${RESET}${BOLD})${RESET}"
 p "${CYAN}==============================================${RESET}"
 if [ "$AUTO" -eq 1 ]; then
-  p "${DIM}  Auto-exploit — tries best vector after scan.${RESET}"
+  p "${DIM}  Auto-exploit after scan.${RESET}"
+elif [ "$SCAN_ONLY" -eq 1 ]; then
+  p "${DIM}  Scan only — no escalation prompt.${RESET}"
 elif [ "$INTERACTIVE" -eq 1 ]; then
-  p "${DIM}  Interactive — pick a vector from the menu after scan.${RESET}"
+  p "${DIM}  Interactive menu after scan.${RESET}"
 else
-  p "${DIM}  Recon only — add ${BOLD}--auto -y${RESET}${DIM} or ${BOLD}--interactive${RESET}${DIM}.${RESET}"
+  p "${DIM}  Scan → then choose: ${BOLD}m${RESET}${DIM}enu, ${BOLD}a${RESET}${DIM}uto, or ${BOLD}q${RESET}${DIM}uit.${RESET}"
 fi
 p ""
 
@@ -688,8 +722,17 @@ if [ "$AUTO" -eq 1 ]; then
   exit $?
 fi
 
-if [ "$INTERACTIVE" -eq 1 ]; then
+if [ "$INTERACTIVE" -eq 1 ] && [ "$PRIORITY_COUNT" -gt 0 ]; then
   interactive_menu
+  exit 0
+fi
+
+if [ "$SCAN_ONLY" -eq 1 ] || [ "$SILENT" -eq 1 ]; then
+  [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0
+fi
+
+if [ "$PRIORITY_COUNT" -gt 0 ] && [ -t 0 ] && [ -t 1 ]; then
+  post_scan_choice
   exit 0
 fi
 

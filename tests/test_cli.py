@@ -16,7 +16,7 @@ def test_json_and_scan_only_can_be_combined():
 def test_version_flag():
     from binsuid import __version__
 
-    assert __version__ == "1.2.1"
+    assert __version__ == "1.2.2"
 
 
 def test_upgrade_flag_parses():
