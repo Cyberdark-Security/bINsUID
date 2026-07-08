@@ -5,7 +5,14 @@ set -euo pipefail
 
 REPO_URL="${BINSUID_REPO_URL:-https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz}"
 INSTALL_DIR="${BINSUID_DIR:-$HOME/tools/bINsUID}"
-WRAPPER="$HOME/bin/binsuid"
+WRAPPER="${BINSUID_WRAPPER:-$HOME/bin/binsuid}"
+FORCE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --force|--upgrade) FORCE=1 ;;
+  esac
+done
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -74,11 +81,17 @@ echo "=============================================="
 echo "  bINsUID — setup automático"
 echo "=============================================="
 
-if need_cmd binsuid && binsuid -V >/dev/null 2>&1; then
+if [ "$FORCE" -eq 0 ] && need_cmd binsuid && binsuid -V >/dev/null 2>&1; then
   echo "[+] bINsUID ya está instalado."
   binsuid -V
+  echo "[*] Para actualizar: curl -fsSL .../get-binsuid.sh | bash -s -- --upgrade"
   print_instructivo
   exit 0
+fi
+
+if [ "$FORCE" -eq 1 ]; then
+  echo "[*] Actualizando bINsUID..."
+  download_repo
 fi
 
 PY="$(find_python)" || {
