@@ -8,7 +8,7 @@ source ~/.bashrc
 binsuid --scan-only
 ```
 
-Solo necesitas **Linux + Python 3 + curl** (o wget). No hace falta git, pip, pipx ni sudo.
+Solo necesitas **Linux + bash + curl** (o wget) en el host de instalación. **Python 3 es opcional**: sin él, `binsuid` ejecuta el escáner bash (`binsuid-scan`).
 
 ---
 
@@ -16,8 +16,9 @@ Solo necesitas **Linux + Python 3 + curl** (o wget). No hace falta git, pip, pip
 
 | Herramienta | ¿Obligatoria? | Si no está |
 |-------------|---------------|------------|
-| Python 3.9+ | **Sí** | No se puede ejecutar |
-| curl o wget | **Sí** (para descargar) | Copia el `.tar.gz` a mano |
+| Linux + bash | **Sí** | No se puede ejecutar |
+| curl o wget | **Sí** (para descargar) | `docker cp` del script o copia manual |
+| Python 3.9+ | No | Modo bash: recon sin auto-escalada |
 | git | No | No uses `git clone` en labs mínimos |
 | pip / pipx | No | El script no los usa |
 | sudo | No | El script no lo usa |

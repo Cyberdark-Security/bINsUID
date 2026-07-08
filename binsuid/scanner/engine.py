@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from binsuid.analysis.ranking import partition_findings
 from binsuid.capabilities import techniques_for_capability_finding
 from binsuid.exploit.builtin import builtin_techniques_for
 from binsuid.exploit.selector import attach_best_techniques
@@ -130,14 +131,6 @@ def run_scan(
         finding.techniques = _merge_techniques(builtins, finding.techniques)
 
     attach_best_techniques(result.findings)
-
-    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    result.findings.sort(
-        key=lambda f: (
-            0 if f.is_exploitable else 1,
-            severity_rank.get(f.severity, 9),
-            f.vector.value,
-            f.path,
-        )
-    )
+    partition_findings(result.findings)
+    result.findings.sort(key=lambda f: (-f.priority_score, f.path))
     return result

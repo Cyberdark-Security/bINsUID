@@ -57,6 +57,9 @@ resolve_download_url() {
   if need_cmd curl; then
     tag="$(curl -fsSL "https://api.github.com/repos/${GITHUB_REPO}/tags" 2>/dev/null \
       | grep -m1 '"name"' | sed 's/.*"name": "\([^"]*\)".*/\1/' || true)"
+  elif need_cmd wget; then
+    tag="$(wget -qO- "https://api.github.com/repos/${GITHUB_REPO}/tags" 2>/dev/null \
+      | grep -m1 '"name"' | sed 's/.*"name": "\([^"]*\)".*/\1/' || true)"
   fi
   if [ -n "$tag" ]; then
     echo "https://github.com/${GITHUB_REPO}/archive/refs/tags/${tag}.tar.gz"
@@ -77,6 +80,9 @@ remote_version() {
   py="$(find_python)" || return 0
   if need_cmd curl; then
     curl -fsSL "$url" | tar xz -O --wildcards '*/binsuid/__init__.py' 2>/dev/null \
+      | "$py" -c "import sys; exec(sys.stdin.read()); print(__version__)" 2>/dev/null || true
+  elif need_cmd wget; then
+    wget -qO- "$url" | tar xz -O --wildcards '*/binsuid/__init__.py' 2>/dev/null \
       | "$py" -c "import sys; exec(sys.stdin.read()); print(__version__)" 2>/dev/null || true
   fi
 }
@@ -161,11 +167,19 @@ PY="$py"
 needs_python() {
   for arg in "\$@"; do
     case "\$arg" in
-      --auto|--upgrade|--json) return 0 ;;
+      --auto|--json) return 0 ;;
     esac
   done
   return 1
 }
+
+for arg in "\$@"; do
+  case "\$arg" in
+    --upgrade|-u)
+      exec "\$INSTALL_DIR/scripts/upgrade-binsuid.sh" --force "\$@"
+      ;;
+  esac
+done
 
 if [ -n "\$PY" ] && command -v "\$PY" >/dev/null 2>&1; then
   export PYTHONPATH="\$INSTALL_DIR\${PYTHONPATH:+:\$PYTHONPATH}"
@@ -173,7 +187,7 @@ if [ -n "\$PY" ] && command -v "\$PY" >/dev/null 2>&1; then
 fi
 
 if needs_python "\$@"; then
-  echo "[-] Python 3 required for auto-exploit / JSON / upgrade on this host." >&2
+  echo "[-] Python 3 required for auto-exploit / JSON on this host." >&2
   echo "[*] Running bash recon (binsuid-scan) instead..." >&2
 fi
 

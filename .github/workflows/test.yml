@@ -28,6 +28,6 @@ jobs:
 
       - name: Smoke test CLI
         run: |
-          binsuid --version | grep -F "1.1.2"
+          binsuid --version | grep -F "1.1.3"
           binsuid --scan-only --quick --skip-sudo --skip-capabilities --skip-sgid --skip-persistence --json | head -20
           test "$(binsuid --json --scan-only --quick --skip-sudo --skip-capabilities --skip-sgid --skip-persistence >/dev/null 2>&1; echo $?)" -eq 0

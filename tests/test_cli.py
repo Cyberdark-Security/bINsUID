@@ -16,12 +16,36 @@ def test_json_and_scan_only_can_be_combined():
 def test_version_flag():
     from binsuid import __version__
 
-    assert __version__ == "1.1.2"
+    assert __version__ == "1.1.3"
 
 
 def test_upgrade_flag_parses():
     args = build_parser().parse_args(["--upgrade"])
     assert args.upgrade
+
+
+def test_upgrade_requires_curl_or_wget():
+    with patch("binsuid.cli.which", return_value=None):
+        assert main(["--upgrade"]) == 1
+
+
+def test_no_color_env_disables_color():
+    import os
+
+    from binsuid.utils import color_enabled, disable_color
+
+    old = os.environ.pop("NO_COLOR", None)
+    try:
+        assert color_enabled() or not __import__("sys").stdout.isatty()
+        os.environ["NO_COLOR"] = ""
+        assert not color_enabled()
+        disable_color()
+        assert not color_enabled()
+    finally:
+        if old is None:
+            os.environ.pop("NO_COLOR", None)
+        else:
+            os.environ["NO_COLOR"] = old
 
 
 def _exploitable_finding() -> Finding:

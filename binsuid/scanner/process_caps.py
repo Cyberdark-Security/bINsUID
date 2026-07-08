@@ -5,7 +5,7 @@ import re
 
 from binsuid.capabilities import INTERESTING_CAPS, severity_for_caps
 from binsuid.models import Finding, Technique, VectorType
-from binsuid.utils import parse_capability_string, run_command, which
+from binsuid.utils import decode_cap_eff_hex, parse_capability_string, run_command, which
 
 CSP_LESSON_URL = (
     "https://github.com/cybersecplayground/30-Day-Linux-for-Hackers/blob/main/"
@@ -52,8 +52,12 @@ def scan_process_capabilities() -> tuple[list[Finding], list[str]]:
 
         proc_name = name_match.group(1) if name_match else "unknown"
         exe_path = _resolve_proc_exe(pid)
-        decoded = _decode_cap_mask(cap_eff) if has_capsh else cap_eff
-        caps = [c.upper() for c in parse_capability_string(decoded)]
+        if has_capsh:
+            decoded = _decode_cap_mask(cap_eff)
+            caps = [c.upper() for c in parse_capability_string(decoded)]
+        else:
+            decoded = cap_eff
+            caps = decode_cap_eff_hex(cap_eff)
         interesting = [c for c in caps if c in INTERESTING_CAPS]
         if not interesting:
             continue

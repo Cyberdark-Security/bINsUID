@@ -6,7 +6,7 @@ import os
 import sys
 
 from binsuid import __version__
-from binsuid.analysis.ranking import best_candidate
+from binsuid.analysis.ranking import best_candidate, ranked_exploitable
 from binsuid.exploit import escalate_privileges
 from binsuid.scanner.engine import run_scan
 from binsuid.ui import (
@@ -19,7 +19,7 @@ from binsuid.ui import (
     print_vulnerable_targets,
     prompt_target_choice,
 )
-from binsuid.utils import ANSI_CYAN, disable_color, paint, run_command
+from binsuid.utils import ANSI_CYAN, disable_color, paint, run_command, which
 
 UPGRADE_SCRIPT_URL = (
     "https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh"
@@ -67,8 +67,23 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_self_upgrade() -> int:
     print(paint("[*] Updating bINsUID from GitHub...", ANSI_CYAN))
+    if which("curl"):
+        fetch = f'curl -fsSL "{UPGRADE_SCRIPT_URL}"'
+    elif which("wget"):
+        fetch = f'wget -qO- "{UPGRADE_SCRIPT_URL}"'
+    else:
+        print(
+            paint(
+                "[-] Need curl or wget. Try manually:\n"
+                f"    curl -fsSL {UPGRADE_SCRIPT_URL} | bash\n"
+                f"    wget -qO- {UPGRADE_SCRIPT_URL} | bash",
+                ANSI_CYAN,
+            ),
+            file=sys.stderr,
+        )
+        return 1
     code, _, stderr = run_command(
-        f'curl -fsSL "{UPGRADE_SCRIPT_URL}" | bash',
+        f"{fetch} | bash -s -- --force",
         shell=True,
         timeout=180,
     )
@@ -76,7 +91,8 @@ def run_self_upgrade() -> int:
         print(
             paint(
                 "[-] Upgrade failed. Try manually:\n"
-                f"    curl -fsSL {UPGRADE_SCRIPT_URL} | bash",
+                f"    curl -fsSL {UPGRADE_SCRIPT_URL} | bash\n"
+                f"    wget -qO- {UPGRADE_SCRIPT_URL} | bash",
                 ANSI_CYAN,
             ),
             file=sys.stderr,
@@ -145,7 +161,7 @@ def _run_scan(args, *, quiet: bool = False) -> object:
 
 
 def escalation_loop(result, *, dry_run: bool = False, assume_yes: bool = False, concise: bool = False) -> int:
-    vulnerable = result.exploitable
+    vulnerable = ranked_exploitable(result.findings)
     if not vulnerable:
         return 1
 
@@ -154,7 +170,11 @@ def escalation_loop(result, *, dry_run: bool = False, assume_yes: bool = False, 
     if choice is None:
         return 0
 
-    finding = vulnerable[0] if choice == "auto" else vulnerable[choice - 1]
+    finding = (
+        best_candidate(result.findings) or vulnerable[0]
+        if choice == "auto"
+        else vulnerable[choice - 1]
+    )
     return escalate_privileges(finding, dry_run=dry_run, assume_yes=assume_yes)
 
 

@@ -1,4 +1,4 @@
-.TH BINSUID 1 "July 2026" "binsuid 1.1.1" "User Commands"
+.TH BINSUID 1 "July 2026" "binsuid 1.1.3" "User Commands"
 .SH NAME
 binsuid \- automatic SUID, SGID, capabilities and sudo privilege escalation
 .SH SYNOPSIS
@@ -78,7 +78,10 @@ Skip privileged group membership hints.
 Run \fBsudo \-l\fR with password prompt.
 .TP
 .B \-\-upgrade
-Download and install the latest release from GitHub.
+Download and install the latest release from GitHub (requires
+.BR curl (1)
+or
+.BR wget (1)).
 .TP
 .B \-V, \-\-version
 Show version information.

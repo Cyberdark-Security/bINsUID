@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 
 from binsuid.models import Finding, VectorType
@@ -91,7 +92,8 @@ def _parse_sudo_l(output: str) -> list[Finding]:
             elif binary == "sudoedit":
                 path = "/usr/bin/sudoedit"
             else:
-                path = binary
+                resolved = which(binary) if os.name == "posix" else None
+                path = resolved or f"/usr/bin/{binary}"
 
             severity = "medium"
             if nopass and setenv:

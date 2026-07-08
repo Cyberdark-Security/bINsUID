@@ -30,11 +30,12 @@ docker exec breach bash /tmp/binsuid-scan.sh --quick
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/binsuid-scan.sh | bash -s -- --quick
 ```
 
-**Update later** (works from pip, .deb, or any old install):
+**Update later** (works from pip, .deb, or any old install; needs `curl` or `wget`):
 
 ```bash
 binsuid --upgrade
 # or: curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash
+# or: wget -qO- https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash
 ```
 
 Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**  

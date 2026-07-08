@@ -116,3 +116,9 @@ def best_candidate(findings: list[Finding]) -> Finding | None:
     if auto:
         return auto[0]
     return priority[0]
+
+
+def ranked_exploitable(findings: list[Finding]) -> list[Finding]:
+    """Exploitable findings ordered by lab priority (highest first)."""
+    priority, _ = partition_findings(findings)
+    return [f for f in priority if f.is_exploitable]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from binsuid.analysis.ranking import best_candidate, partition_findings
+from binsuid.analysis.ranking import best_candidate, partition_findings, ranked_exploitable
 from binsuid.exploit.executor import adapt_command
 from binsuid.exploit.selector import escalation_summary
 from binsuid.models import Finding, ScanResult, VectorType
@@ -192,7 +192,7 @@ def print_vulnerable_targets(findings: list[Finding], *, concise: bool = False) 
     if concise:
         print_concise_targets(findings)
         return
-    vulnerable = [f for f in findings if f.is_exploitable]
+    vulnerable = ranked_exploitable(findings)
     if not vulnerable:
         print(paint("[-] No automatically exploitable targets found.", ANSI_RED))
         print(paint("    Try full scan (without --quick) or check sudo -l manually.", ANSI_YELLOW))

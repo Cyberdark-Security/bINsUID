@@ -4,7 +4,7 @@
 # Usage: binsuid-scan.sh [--quick] [--silent] [--no-color]
 set -euo pipefail
 
-VERSION="1.1.2"
+VERSION="1.1.3"
 QUICK=0
 SILENT=0
 NO_COLOR=0
@@ -15,7 +15,17 @@ for arg in "$@"; do
     --silent) SILENT=1 ;;
     --no-color) NO_COLOR=1 ;;
     --scan-only|--version|-V|-h|--help) ;;
-    --auto|--upgrade|--json) ;;
+    --upgrade|-u)
+      script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+      if [ -f "$script_dir/upgrade-binsuid.sh" ]; then
+        exec "$script_dir/upgrade-binsuid.sh" --force "$@"
+      fi
+      echo "[-] --upgrade needs upgrade-binsuid.sh. Run: curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash" >&2
+      exit 1
+      ;;
+    --auto|--json)
+      echo "[!] $arg ignored in bash mode (install python3 for full binsuid)" >&2
+      ;;
     *) echo "Unknown option: $arg (bash mode supports --quick --silent --no-color)" >&2; exit 2 ;;
   esac
 done
@@ -40,7 +50,7 @@ EOF
   esac
 done
 
-[ -n "${NO_COLOR:-}" ] || [ -n "${NO_COLOR_ENV:-}" ] && NO_COLOR=1
+[ "${NO_COLOR+set}" = set ] && NO_COLOR=1
 [ "${NO_COLOR:-0}" -eq 1 ] && RED="" GREEN="" YELLOW="" CYAN="" BOLD="" RESET="" || {
   RED='\033[31m'; GREEN='\033[32m'; YELLOW='\033[33m'; CYAN='\033[36m'; BOLD='\033[1m'; RESET='\033[0m'
 }
