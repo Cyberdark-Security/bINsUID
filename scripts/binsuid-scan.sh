@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — focused privesc recon without Python.
 # Usage: binsuid-scan.sh [--quick] [--silent] [--no-color] [--debug]
-VERSION="1.1.6"
+VERSION="1.1.7"
 
 QUICK=0
 SILENT=0
@@ -38,12 +38,39 @@ done
 
 dbg() { [ "$DEBUG" -eq 1 ] && echo "[debug] $*" >&2; }
 
-if [ -n "${NO_COLOR:-}" ] || [ "$NO_COLOR" -eq 1 ]; then
-  RED=""; GREEN=""; YELLOW=""; CYAN=""; BOLD=""; RESET=""
-else
-  RED='\033[31m'; GREEN='\033[32m'; YELLOW='\033[33m'
-  CYAN='\033[36m'; BOLD='\033[1m'; RESET='\033[0m'
-fi
+use_color() {
+  [ "$NO_COLOR" -eq 1 ] && return 1
+  [ -n "${NO_COLOR:-}" ] && return 1
+  [ -n "${FORCE_COLOR:-}" ] && return 0
+  [ -t 1 ] && return 0
+  return 1
+}
+
+init_colors() {
+  if use_color; then
+    RED='\033[31m'; GREEN='\033[32m'; YELLOW='\033[33m'
+    BLUE='\033[34m'; MAGENTA='\033[35m'; CYAN='\033[36m'
+    BOLD='\033[1m'; DIM='\033[2m'; RESET='\033[0m'
+  else
+    RED=''; GREEN=''; YELLOW=''; BLUE=''; MAGENTA=''
+    CYAN=''; BOLD=''; DIM=''; RESET=''
+  fi
+}
+
+init_colors
+
+# printf is more reliable than echo for ANSI on minimal shells
+p() { printf '%b\n' "$*"; }
+
+section() {
+  # section COLOR "title"
+  p "${1}${BOLD}>>> ${2}${RESET}"
+}
+
+tag_item() {
+  # tag_item TAG_COLOR TAG "label" VALUE_COLOR "value"
+  p "  ${2}[${3}]${RESET} ${5}${4}${RESET}"
+}
 
 is_known_suid() {
   case "$1" in
@@ -229,75 +256,90 @@ PRIORITY_COUNT=$(( $(count_lines "$SUID_PRIORITY") + $(count_lines "$SGID_FOUND"
 [ -n "$SUDO_OUT" ] && PRIORITY_COUNT=$((PRIORITY_COUNT + 1))
 
 if [ "$SILENT" -eq 1 ]; then
-  echo "Priority: $PRIORITY_COUNT | SUID: $(count_lines "$SUID_PRIORITY") | bash $VERSION"
+  p "Priority: $PRIORITY_COUNT | SUID: $(count_lines "$SUID_PRIORITY") | bash $VERSION"
   [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0
 fi
 
-echo "${CYAN}==============================================${RESET}"
-echo "${BOLD}  bINsUID scan (bash $VERSION)${RESET}"
-echo "${CYAN}==============================================${RESET}"
-echo "${YELLOW}  Recon only — no Python on this host.${RESET}"
-echo
+p "${CYAN}==============================================${RESET}"
+p "${BOLD}  bINsUID scan (bash ${CYAN}$VERSION${RESET}${BOLD})${RESET}"
+p "${CYAN}==============================================${RESET}"
+p "${DIM}  Recon only — no Python on this host.${RESET}"
+p ""
 
 if [ -n "$SUID_PRIORITY" ]; then
-  echo "${GREEN}${BOLD}>>> SUID priority targets${RESET}"
+  section "$RED" "SUID priority targets"
   echo "$SUID_PRIORITY" | while IFS= read -r p; do
-    [ -n "$p" ] && echo "  ${GREEN}>>>${RESET} $p"
+    [ -n "$p" ] && tag_item "$RED" "$RED" "SUID" "$BOLD" "$p"
   done
-  echo
+  p ""
 fi
 
 if [ -n "$SGID_FOUND" ]; then
-  echo "${GREEN}${BOLD}>>> SGID binaries${RESET}"
-  echo "$SGID_FOUND" | sed 's/^/  /'
-  echo
+  section "$RED" "SGID binaries"
+  echo "$SGID_FOUND" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$RED" "$RED" "SGID" "" "$p"
+  done
+  p ""
 fi
 
 if [ -n "$SUDO_OUT" ]; then
-  echo "${GREEN}${BOLD}>>> Sudo rules${RESET}"
-  echo "$SUDO_OUT" | sed 's/^/  /'
-  echo
+  section "$CYAN" "Sudo rules"
+  echo "$SUDO_OUT" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$CYAN" "$CYAN" "SUDO" "" "$p"
+  done
+  p ""
 fi
 
 if [ -n "$CAP_FOUND" ]; then
-  echo "${GREEN}${BOLD}>>> Dangerous capabilities${RESET}"
-  echo "$CAP_FOUND" | sed 's/^/  /'
-  echo
+  section "$MAGENTA" "Dangerous capabilities"
+  echo "$CAP_FOUND" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$MAGENTA" "$MAGENTA" "CAPS" "" "$p"
+  done
+  p ""
 fi
 
 if [ -n "$PATH_FOUND" ]; then
-  echo "${YELLOW}${BOLD}>>> Writable PATH${RESET}"
-  echo "$PATH_FOUND" | sed 's/^/  /'
-  echo
+  section "$YELLOW" "Writable PATH"
+  echo "$PATH_FOUND" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$YELLOW" "$YELLOW" "PATH" "" "$p"
+  done
+  p ""
 fi
 
 if [ -n "$CRON_FOUND" ]; then
-  echo "${YELLOW}${BOLD}>>> Writable cron scripts${RESET}"
-  echo "$CRON_FOUND" | sed 's/^/  /'
-  echo
+  section "$YELLOW" "Writable cron scripts"
+  echo "$CRON_FOUND" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$YELLOW" "$YELLOW" "CRON" "" "$p"
+  done
+  p ""
 fi
 
 if [ -n "$GROUP_FOUND" ]; then
-  echo "${YELLOW}${BOLD}>>> Privileged groups${RESET}"
-  echo "$GROUP_FOUND" | sed 's/^/  /'
-  echo
+  section "$GREEN" "Privileged groups"
+  echo "$GROUP_FOUND" | while IFS= read -r p; do
+    [ -n "$p" ] && tag_item "$GREEN" "$GREEN" "GROUP" "$BOLD" "$p"
+  done
+  p ""
 fi
 
-echo "${CYAN}Summary${RESET}"
-echo "  Priority targets    : $PRIORITY_COUNT"
-echo "  System SUID hidden  : $(count_lines "$SUID_NOISE")"
+p "${CYAN}${BOLD}Summary${RESET}"
+p "  ${BOLD}Priority targets${RESET}    : ${MAGENTA}${BOLD}$PRIORITY_COUNT${RESET}"
+p "  ${DIM}System SUID hidden${RESET}  : $(count_lines "$SUID_NOISE")"
 
 if [ -n "$ERRORS" ]; then
-  echo "${YELLOW}Warnings:${RESET}"
-  echo "$ERRORS" | sed 's/^/  - /'
+  p ""
+  p "${YELLOW}${BOLD}Warnings${RESET}"
+  echo "$ERRORS" | while IFS= read -r e; do
+    [ -n "$e" ] && p "  ${YELLOW}-${RESET} ${DIM}$e${RESET}"
+  done
 fi
 
 if [ "$PRIORITY_COUNT" -eq 0 ]; then
-  echo
-  echo "${YELLOW}No custom targets in quick paths. Try full scan or manual:${RESET}"
-  echo "  find / -perm -4000 -type f 2>/dev/null | grep -vE 'passwd|mount|su\$|newgrp|chfn|chsh|gpasswd|ssh-keysign'"
-  echo "  find /home /var /opt -writable -type f 2>/dev/null | head -20"
-  echo "  getcap -r / 2>/dev/null"
+  p ""
+  p "${YELLOW}No custom targets in quick paths. Try full scan or manual:${RESET}"
+  p "  ${DIM}find / -perm -4000 -type f 2>/dev/null | grep -vE 'passwd|mount|su\$|...'${RESET}"
+  p "  ${DIM}find /home /var /opt -writable -type f 2>/dev/null | head -20${RESET}"
+  p "  ${DIM}getcap -r / 2>/dev/null${RESET}"
 fi
 
 [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from binsuid.models import VectorType
 from binsuid.scanner.groups import scan_groups
 
@@ -11,7 +13,8 @@ def test_scan_groups_docker_hint():
 
 
 def test_scan_groups_ignores_unprivileged():
-    findings = scan_groups(extra_groups=["users", "student"])
+    with patch("binsuid.scanner.groups._current_groups", return_value=[]):
+        findings = scan_groups(extra_groups=["users", "student"])
     assert findings == []
 
 

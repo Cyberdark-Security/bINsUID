@@ -1,3 +1,11 @@
+binsuid (1.1.7-1) kali-dev; urgency=medium
+
+  * Color-coded bash scanner output by vector type
+  * Fix CI tests isolated from runner groups and cron paths
+  * Skip non-regular files in cron persistence scan
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 05:00:00 +0000
+
 binsuid (1.1.6-1) kali-dev; urgency=medium
 
   * Rewrite binsuid-scan.sh for minimal containers (no set -e, broader paths)

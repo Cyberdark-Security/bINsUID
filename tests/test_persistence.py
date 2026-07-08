@@ -25,7 +25,8 @@ def test_scan_persistence_extra_script():
     fd, path = tempfile.mkstemp(suffix=".sh")
     os.close(fd)
     try:
-        findings, _ = scan_persistence(extra_scripts=[path])
+        with patch("binsuid.scanner.persistence._collect_cron_sources", return_value=[]):
+            findings, _ = scan_persistence(extra_scripts=[path])
         assert len(findings) == 1
         assert findings[0].vector == VectorType.PERSISTENCE
         assert findings[0].path == path
@@ -37,7 +38,7 @@ def test_scan_persistence_extra_script():
 def test_scan_persistence_skips_readonly_other_owned():
     script = "/root/locked.sh"
     fake_stat = os.stat_result((0o100755, 0, 0, 1, 0, 0, 0, 0, 0, 0))
-    with patch("binsuid.scanner.persistence.os.path.exists", return_value=True):
+    with patch("binsuid.scanner.persistence.os.path.isfile", return_value=True):
         with patch("binsuid.scanner.persistence.os.stat", return_value=fake_stat):
             with patch("binsuid.scanner.persistence.is_writable_by_unprivileged", return_value=False):
                 with patch("binsuid.scanner.persistence.current_ids", return_value=(1000, 1000, 1000, 1000)):

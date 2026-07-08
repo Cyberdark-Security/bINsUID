@@ -95,7 +95,7 @@ def _script_finding(
     source: str,
     uid: int,
 ) -> Finding | None:
-    if not os.path.exists(script_path):
+    if not os.path.isfile(script_path):
         return None
 
     try:
