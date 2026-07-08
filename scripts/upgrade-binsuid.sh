@@ -167,7 +167,7 @@ PY="$py"
 needs_python() {
   for arg in "\$@"; do
     case "\$arg" in
-      --auto|--json) return 0 ;;
+      --json) return 0 ;;
     esac
   done
   return 1
@@ -187,8 +187,8 @@ if [ -n "\$PY" ] && command -v "\$PY" >/dev/null 2>&1; then
 fi
 
 if needs_python "\$@"; then
-  echo "[-] Python 3 required for auto-exploit / JSON on this host." >&2
-  echo "[*] Running bash recon (binsuid-scan) instead..." >&2
+  echo "[-] Python 3 required for --json on this host." >&2
+  exit 1
 fi
 
 exec "\$SCAN_SCRIPT" "\$@"
@@ -225,11 +225,10 @@ EOF
   else
     cat <<EOF
 
-  [!] Python 3 not found — bash recon mode only
+  [!] Python 3 not found — bash mode (recon + --auto)
   binsuid --scan-only     # SUID/SGID/sudo/caps/PATH/cron/groups
+  binsuid --auto -y       # scan then auto-escalate (docker, SUID, sudo)
   binsuid-scan --quick    # same, explicit bash scanner
-
-  Install python3 on this host for auto-escalation.
 EOF
   fi
 }

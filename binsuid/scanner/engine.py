@@ -117,7 +117,7 @@ def run_scan(
         [
             f for f in result.findings
             if f.vector not in {VectorType.CAPABILITIES, VectorType.PATH_HIJACK,
-                                VectorType.PERSISTENCE, VectorType.GROUP}
+                                VectorType.PERSISTENCE}
         ],
         db,
     )
@@ -125,7 +125,7 @@ def run_scan(
 
     for finding in result.findings:
         if finding.vector in {VectorType.PROCESS_CAPABILITIES, VectorType.PATH_HIJACK,
-                              VectorType.PERSISTENCE, VectorType.GROUP}:
+                              VectorType.PERSISTENCE}:
             continue
         builtins = builtin_techniques_for(finding)
         finding.techniques = _merge_techniques(builtins, finding.techniques)

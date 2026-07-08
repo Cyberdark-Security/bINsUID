@@ -24,6 +24,7 @@ source ~/.bashrc
 
   # Vuelve a devops@breach:
   bash /tmp/binsuid-scan.sh --quick
+  bash /tmp/binsuid-scan.sh --auto -y    # escanea y escala solo (docker, SUID, sudo)
 
   (Solo necesita bash + find dentro del lab. No instala nada.)
 

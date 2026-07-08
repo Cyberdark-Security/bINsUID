@@ -1,3 +1,9 @@
+binsuid (1.1.9-1) kali-dev; urgency=medium
+
+  * Bash --auto and Python group auto-escalation (docker/lxd)
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 06:55:00 +0000
+
 binsuid (1.1.7-1) kali-dev; urgency=medium
 
   * Color-coded bash scanner; CI test isolation fixes

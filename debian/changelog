@@ -1,3 +1,10 @@
+binsuid (1.1.9-1) kali-dev; urgency=medium
+
+  * Bash scanner --auto -y for docker/SUID/sudo without Python
+  * Python auto-escalation for docker and lxd group membership
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 06:55:00 +0000
+
 binsuid (1.1.8-1) kali-dev; urgency=medium
 
   * Skip /dev, /proc, /sys and non-regular files in cron persistence scan
