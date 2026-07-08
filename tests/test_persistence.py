@@ -3,7 +3,7 @@ import tempfile
 from unittest.mock import patch
 
 from binsuid.models import VectorType
-from binsuid.scanner.persistence import _extract_script_paths, scan_persistence
+from binsuid.scanner.persistence import _extract_script_paths, _script_finding, scan_persistence
 
 
 SAMPLE_CRON = """
@@ -33,6 +33,12 @@ def test_scan_persistence_extra_script():
         assert "owned" in findings[0].details or "writable" in findings[0].details
     finally:
         os.unlink(path)
+
+
+def test_scan_persistence_skips_special_paths():
+    with patch("binsuid.scanner.persistence.is_writable_by_unprivileged", return_value=True):
+        assert _script_finding("/dev/null", source="test", uid=1000) is None
+        assert _script_finding("/proc/self/status", source="test", uid=1000) is None
 
 
 def test_scan_persistence_skips_readonly_other_owned():

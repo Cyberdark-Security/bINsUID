@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import stat
 from typing import Iterable
 
 from binsuid.models import Finding, VectorType
@@ -89,13 +90,23 @@ def _extract_script_paths(content: str) -> list[str]:
     return paths
 
 
+def _is_regular_script(path: str) -> bool:
+    if path.startswith(("/dev/", "/proc/", "/sys/")):
+        return False
+    try:
+        st = os.stat(path, follow_symlinks=False)
+    except OSError:
+        return False
+    return stat.S_ISREG(st.st_mode)
+
+
 def _script_finding(
     script_path: str,
     *,
     source: str,
     uid: int,
 ) -> Finding | None:
-    if not os.path.isfile(script_path):
+    if not _is_regular_script(script_path):
         return None
 
     try:

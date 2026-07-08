@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — focused privesc recon without Python.
 # Usage: binsuid-scan.sh [--quick] [--silent] [--no-color] [--debug]
-VERSION="1.1.7"
+VERSION="1.1.8"
 
 QUICK=0
 SILENT=0

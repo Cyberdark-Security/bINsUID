@@ -1,3 +1,10 @@
+binsuid (1.1.8-1) kali-dev; urgency=medium
+
+  * Skip /dev, /proc, /sys and non-regular files in cron persistence scan
+  * Confirm CI test isolation on Linux GitHub runners
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 05:20:00 +0000
+
 binsuid (1.1.7-1) kali-dev; urgency=medium
 
   * Color-coded bash scanner output by vector type
