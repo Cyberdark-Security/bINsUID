@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Install or upgrade bINsUID from any prior method (pip, wrapper, deb, /opt).
+# Works WITH or WITHOUT Python 3 (bash scanner fallback).
 # Usage:
 #   curl -fsSL …/upgrade-binsuid.sh | bash
 #   binsuid --upgrade
@@ -8,6 +9,7 @@ set -euo pipefail
 GITHUB_REPO="Cyberdark-Security/bINsUID"
 INSTALL_DIR="${BINSUID_DIR:-}"
 WRAPPER_PATH="${BINSUID_WRAPPER:-}"
+SCAN_PATH=""
 FORCE=0
 
 for arg in "$@"; do
@@ -37,7 +39,7 @@ download_to() {
   elif need_cmd wget; then
     wget -qO "$archive" "$url"
   else
-    echo "[-] Need curl or wget." >&2
+    echo "[-] Need curl or wget on the install host." >&2
     exit 1
   fi
   rm -rf "$dest"
@@ -72,7 +74,7 @@ installed_version() {
 remote_version() {
   local url py
   url="$(resolve_download_url)"
-  py="$(find_python)" || return 1
+  py="$(find_python)" || return 0
   if need_cmd curl; then
     curl -fsSL "$url" | tar xz -O --wildcards '*/binsuid/__init__.py' 2>/dev/null \
       | "$py" -c "import sys; exec(sys.stdin.read()); print(__version__)" 2>/dev/null || true
@@ -88,15 +90,16 @@ detect_paths() {
   fi
 
   if [ -z "$INSTALL_DIR" ] && [ -n "$WRAPPER_PATH" ] && [ -f "$WRAPPER_PATH" ]; then
-    if grep -q 'PYTHONPATH=' "$WRAPPER_PATH" 2>/dev/null; then
-      INSTALL_DIR="$(grep -m1 'PYTHONPATH=' "$WRAPPER_PATH" \
-        | sed -E 's/.*PYTHONPATH=([^[:space:]${]+).*/\1/')"
+    if grep -q 'INSTALL_DIR=' "$WRAPPER_PATH" 2>/dev/null; then
+      INSTALL_DIR="$(grep -m1 'INSTALL_DIR=' "$WRAPPER_PATH" | sed -E 's/.*INSTALL_DIR="([^"]+)".*/\1/')"
+    elif grep -q 'PYTHONPATH=' "$WRAPPER_PATH" 2>/dev/null; then
+      INSTALL_DIR="$(grep -m1 'PYTHONPATH=' "$WRAPPER_PATH" | sed -E 's/.*PYTHONPATH=([^[:space:]${]+).*/\1/')"
     fi
   fi
 
   if [ -z "$INSTALL_DIR" ]; then
     for candidate in /opt/bINsUID "$HOME/tools/bINsUID" "$HOME/.local/src/bINsUID"; do
-      if [ -f "$candidate/binsuid/cli.py" ]; then
+      if [ -f "$candidate/binsuid/cli.py" ] || [ -f "$candidate/scripts/binsuid-scan.sh" ]; then
         INSTALL_DIR="$candidate"
         break
       fi
@@ -118,6 +121,8 @@ detect_paths() {
       WRAPPER_PATH="$HOME/bin/binsuid"
     fi
   fi
+
+  SCAN_PATH="$(dirname "$WRAPPER_PATH")/binsuid-scan"
 }
 
 remove_pip_install() {
@@ -132,14 +137,47 @@ remove_pip_install() {
   fi
 }
 
+install_scan_script() {
+  local src="$INSTALL_DIR/scripts/binsuid-scan.sh"
+  if [ ! -f "$src" ]; then
+    echo "[-] Missing $src after download." >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$SCAN_PATH")"
+  cp "$src" "$SCAN_PATH"
+  chmod +x "$SCAN_PATH"
+}
+
 write_wrapper() {
-  local py="$1"
+  local py="${1:-}"
   mkdir -p "$(dirname "$WRAPPER_PATH")"
   cat > "$WRAPPER_PATH" <<EOF
 #!/usr/bin/env bash
-# bINsUID launcher — updated by upgrade-binsuid.sh
-export PYTHONPATH="$INSTALL_DIR\${PYTHONPATH:+:\$PYTHONPATH}"
-exec "$py" -m binsuid "\$@"
+# bINsUID hybrid launcher (Python + bash fallback)
+INSTALL_DIR="$INSTALL_DIR"
+SCAN_SCRIPT="$SCAN_PATH"
+PY="$py"
+
+needs_python() {
+  for arg in "\$@"; do
+    case "\$arg" in
+      --auto|--upgrade|--json) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+if [ -n "\$PY" ] && command -v "\$PY" >/dev/null 2>&1; then
+  export PYTHONPATH="\$INSTALL_DIR\${PYTHONPATH:+:\$PYTHONPATH}"
+  exec "\$PY" -m binsuid "\$@"
+fi
+
+if needs_python "\$@"; then
+  echo "[-] Python 3 required for auto-exploit / JSON / upgrade on this host." >&2
+  echo "[*] Running bash recon (binsuid-scan) instead..." >&2
+fi
+
+exec "\$SCAN_SCRIPT" "\$@"
 EOF
   chmod +x "$WRAPPER_PATH"
 }
@@ -156,22 +194,37 @@ ensure_path() {
 }
 
 print_done() {
+  local py="${1:-}"
   cat <<EOF
 
-[+] bINsUID ready at: $WRAPPER_PATH
-[+] Source tree:      $INSTALL_DIR
-
-  binsuid --scan-only
-  binsuid --auto -y
-  binsuid --upgrade    # update again later
+[+] binsuid launcher:  $WRAPPER_PATH
+[+] bash scanner:      $SCAN_PATH
+[+] source tree:       $INSTALL_DIR
 EOF
+  if [ -n "$py" ]; then
+    cat <<EOF
+
+  binsuid --scan-only     # full Python scan
+  binsuid --auto -y       # auto-escalate
+  binsuid --upgrade       # update
+EOF
+  else
+    cat <<EOF
+
+  [!] Python 3 not found — bash recon mode only
+  binsuid --scan-only     # SUID/SGID/sudo/caps/PATH/cron/groups
+  binsuid-scan --quick    # same, explicit bash scanner
+
+  Install python3 on this host for auto-escalation.
+EOF
+  fi
 }
 
 echo "=============================================="
 echo "  bINsUID — install / upgrade"
 echo "=============================================="
 
-PY="$(find_python)" || { echo "[-] Python 3 required." >&2; exit 1; }
+PY="$(find_python || true)"
 detect_paths
 
 CURRENT="$(installed_version || true)"
@@ -179,7 +232,7 @@ REMOTE="$(remote_version || true)"
 
 if [ "$FORCE" -eq 0 ] && [ -n "$CURRENT" ] && [ -n "$REMOTE" ] && [ "$CURRENT" = "$REMOTE" ]; then
   echo "[+] Already up to date: binsuid $CURRENT"
-  print_done
+  print_done "$PY"
   exit 0
 fi
 
@@ -196,11 +249,12 @@ echo "[*] URL: $URL"
 
 remove_pip_install
 download_to "$URL" "$INSTALL_DIR"
+install_scan_script
 write_wrapper "$PY"
 ensure_path
 
 hash -r 2>/dev/null || true
 
 echo
-echo "[+] Updated to: $(binsuid -V 2>/dev/null || echo 'unknown')"
-print_done
+echo "[+] Installed: $(binsuid -V 2>/dev/null || echo 'binsuid (bash mode)')"
+print_done "$PY"

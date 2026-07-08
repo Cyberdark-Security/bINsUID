@@ -13,13 +13,19 @@ PASO 1 — Instalar (copiar y pegar una sola vez)
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
 source ~/.bashrc
 
-(No necesitas git, pip ni sudo. Solo Python 3 y curl.)
+(No necesitas git ni pip. Python 3 es opcional: sin él, binsuid hace recon en bash.)
+
+¿Contenedor sin Python ni curl? Desde Kali:
+  docker cp …/binsuid-scan.sh breach:/tmp/binsuid-scan.sh
+  docker exec breach bash /tmp/binsuid-scan.sh --quick
 
 --------------------------------------------------------------------------------
 PASO 2 — Escanear (ver qué hay en el sistema)
 --------------------------------------------------------------------------------
 
 binsuid --scan-only
+
+Modo bash (sin Python): mismo comando — escanea SUID/SGID/sudo/caps/PATH/cron/grupos.
 
 Verás:
   - Objetivos prioritarios del lab (marcados con >>>)

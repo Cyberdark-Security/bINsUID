@@ -11,12 +11,23 @@ Scan SUID, capabilities, and sudo — then escalate with one command.
 
 ## Start here (any lab)
 
-**One command.** Works without git, pip, or sudo. Needs only Linux + Python 3 + curl:
+**One command.** Works without git or pip. Needs Linux + bash + (`curl` or `wget` on the install host). **Python 3 optional** — without it, `binsuid` runs a focused bash scanner (like linpeas, but only privesc vectors).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
 source ~/.bashrc
 binsuid --scan-only
+```
+
+**No Python on the target?** Copy or curl the bash scanner only:
+
+```bash
+# From Kali host into a minimal container:
+docker cp scripts/binsuid-scan.sh breach:/tmp/binsuid-scan.sh
+docker exec breach bash /tmp/binsuid-scan.sh --quick
+
+# Or one file from GitHub (needs curl/wget once):
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/binsuid-scan.sh | bash -s -- --quick
 ```
 
 **Update later** (works from pip, .deb, or any old install):
@@ -57,10 +68,11 @@ binsuid --scan-only --skip-sudo --skip-capabilities --quick
 
 | Required | Optional (warnings if missing) |
 |----------|--------------------------------|
-| Python 3.9+ | `getcap` (capabilities scan) |
-| curl or wget (first download only) | passwordless `sudo -l` (sudo scan) |
+| Linux + bash + `find` | Python 3 (full scan + auto-escalate) |
+| curl or wget (install host) | `getcap` (capabilities scan) |
+| | passwordless `sudo -l` (sudo scan) |
 
-**Zero pip dependencies.**
+**Without Python:** `binsuid` / `binsuid-scan.sh` run bash recon only (SUID, SGID, sudo, caps, PATH, cron, groups).
 
 ## Other install methods
 
