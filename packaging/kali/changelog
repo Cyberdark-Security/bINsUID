@@ -1,3 +1,10 @@
+binsuid (1.1.6-1) kali-dev; urgency=medium
+
+  * Bash scanner v1.1.6 for minimal labs without Python
+  * Improved compatibility on restricted containers (WHOAMI Breach)
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 04:45:00 +0000
+
 binsuid (1.1.0-1) kali-dev; urgency=medium
 
   * Add SGID scan, writable PATH audit, cron persistence, and group hints

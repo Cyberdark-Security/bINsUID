@@ -1,3 +1,10 @@
+binsuid (1.1.6-1) kali-dev; urgency=medium
+
+  * Rewrite binsuid-scan.sh for minimal containers (no set -e, broader paths)
+  * Fix silent exit on find errors; add --debug flag for bash scanner
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 04:45:00 +0000
+
 binsuid (1.1.0-1) kali-dev; urgency=medium
 
   * Add SGID scan, writable PATH audit, cron persistence, and group hints
