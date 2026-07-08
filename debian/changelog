@@ -1,3 +1,10 @@
+binsuid (1.2.0-1) kali-dev; urgency=medium
+
+  * Interactive escalation menu (--interactive) in bash scanner
+  * Choose SUID, PATH, groups, sudo, caps, or auto mode
+
+ -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 07:20:00 +0000
+
 binsuid (1.1.9-1) kali-dev; urgency=medium
 
   * Bash scanner --auto -y for docker/SUID/sudo without Python

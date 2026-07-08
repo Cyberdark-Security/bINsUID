@@ -220,14 +220,16 @@ EOF
 
   binsuid --scan-only     # full Python scan
   binsuid --auto -y       # auto-escalate
+  binsuid --interactive   # menu: pick vector
   binsuid --upgrade       # update
 EOF
   else
     cat <<EOF
 
-  [!] Python 3 not found — bash mode (recon + --auto)
+  [!] Python 3 not found — bash mode (recon + --auto + --interactive)
   binsuid --scan-only     # SUID/SGID/sudo/caps/PATH/cron/groups
   binsuid --auto -y       # scan then auto-escalate (docker, SUID, sudo)
+  binsuid --interactive   # scan then menu to pick vector
   binsuid-scan --quick    # same, explicit bash scanner
 EOF
   fi

