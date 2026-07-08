@@ -1,0 +1,9 @@
+#!/bin/sh
+# Strip Cursor attribution so only the human author appears on GitHub.
+# Install: sh scripts/install-git-hooks.sh
+msg_file="$1"
+[ -f "$msg_file" ] || exit 0
+tmp="${msg_file}.binsuid"
+grep -viE '^(Co-authored-by: Cursor|Made-with: Cursor)' "$msg_file" | grep -vi 'cursoragent@cursor.com' > "$tmp" 2>/dev/null || cp "$msg_file" "$tmp"
+mv "$tmp" "$msg_file"
+exit 0
