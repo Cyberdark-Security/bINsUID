@@ -1,51 +1,31 @@
-# Guía de instalación por entorno
+# Guía de instalación
 
-> **Un solo comando para casi cualquier lab** (recomendado):
+bINsUID funciona en **Linux**. Elige el método según tu entorno.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
-source ~/.bashrc
-binsuid --scan-only
-```
+## Requisitos
 
-Solo necesitas **Linux + bash + curl** (o wget) en el host de instalación. **Python 3 es opcional**: sin él, `binsuid` ejecuta el escáner bash (`binsuid-scan`).
-
----
-
-## Qué necesita el sistema
-
-| Herramienta | ¿Obligatoria? | Si no está |
-|-------------|---------------|------------|
-| Linux + bash | **Sí** | No se puede ejecutar |
-| curl o wget | **Sí** (para descargar) | `docker cp` del script o copia manual |
-| Python 3.9+ | No | Modo bash: recon sin auto-escalada |
-| git | No | No uses `git clone` en labs mínimos |
-| pip / pipx | No | El script no los usa |
-| sudo | No | El script no lo usa |
-| getcap | No | Aviso: no escanea capabilities |
-| sudo sin password | No | Aviso: no escanea reglas sudo útiles |
+| Componente | ¿Obligatorio? | Si no está |
+|------------|---------------|------------|
+| Linux + bash | Sí | No se puede ejecutar |
+| `find` | Sí | Falla el escaneo |
+| curl o wget | Para instalar online | Copia manual del script o `.deb` |
+| Python 3.9+ | Para CLI completa | Solo escáner bash (`binsuid-scan.sh`) |
+| getcap (`libcap2-bin`) | No | No escanea capabilities (aviso) |
+| sudo sin contraseña | No | Escaneo sudo limitado (aviso) |
 
 ---
 
-## Por tipo de laboratorio
+## Kali Linux
 
-### Docker / CTF (usuario `hacker`, sin sudo)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
-source ~/.bashrc
-binsuid --scan-only
-```
-
-### Sin instalar nada (una sola vez, sin alias)
+### Desde repositorios (cuando esté empaquetado)
 
 ```bash
-curl -sL https://github.com/Cyberdark-Security/bINsUID/archive/refs/heads/main.tar.gz | tar xz -C /tmp
-cd /tmp/bINsUID-main
-/usr/bin/python3 -m binsuid --scan-only
+sudo apt update
+sudo apt install binsuid
+binsuid --version
 ```
 
-### Kali Linux (tu máquina o VM con pipx)
+### pipx (última versión desde git)
 
 ```bash
 sudo apt install -y pipx
@@ -55,64 +35,85 @@ pipx install https://github.com/Cyberdark-Security/bINsUID.git
 binsuid --scan-only
 ```
 
-O desde clone:
+### Desde `.deb` de Releases
 
 ```bash
-git clone https://github.com/Cyberdark-Security/bINsUID.git
-cd bINsUID
-./scripts/install-kali.sh
-```
-
-### VM con root y paquetes Debian
-
-```bash
-sudo dpkg -i binsuid_*.deb    # desde GitHub Releases
-# o
-pip install --break-system-packages .
+sudo dpkg -i binsuid_*_all.deb
+sudo apt -f install
 ```
 
 ---
 
-## Uso después de instalar
+## Debian / Ubuntu
+
+Igual que Kali: paquete `.deb`, `pipx` o instalador universal.
+
+En sistemas con PEP 668, usa `pipx` o el script `get-binsuid.sh`.
+
+---
+
+## Cualquier Linux (instalador universal)
 
 ```bash
-binsuid --scan-only       # ver objetivos (recomendado la primera vez)
-binsuid --auto --dry-run -y   # ver qué haría sin ejecutar
-binsuid --auto -y         # escalar al mejor objetivo
-binsuid --json            # salida JSON
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
+source ~/.bashrc
+binsuid --scan-only
+```
+
+Actualizar:
+
+```bash
+binsuid --upgrade
 ```
 
 ---
 
-## Mensajes que NO son errores
+## Objetivos mínimos (sin Python)
+
+Descarga el escáner bash en un equipo con red, transfiérelo al objetivo y ejecuta:
+
+```bash
+bash binsuid-scan.sh --quick
+```
+
+Tras el escaneo: **m** (menú), **a** (automático), **q** (salir).
+
+```bash
+bash binsuid-scan.sh --quick --scan-only
+bash binsuid-scan.sh --quick --auto -y
+```
+
+---
+
+## Uso habitual
+
+```bash
+binsuid --scan-only
+binsuid --auto --dry-run -y
+binsuid --auto -y
+binsuid --json --scan-only --quick
+```
+
+---
+
+## Avisos normales
 
 | Mensaje | Significado |
 |---------|-------------|
-| `getcap not found` | El lab no tiene `libcap2-bin`. El escaneo SUID sigue funcionando. |
-| `sudo: a password is required` | Tu usuario no tiene sudo libre. El escaneo SUID sigue funcionando. |
-| `18 system SUID binaries hidden` | Normal. bINsUID oculta ruido y muestra el objetivo del lab arriba. |
+| `getcap not found` | Falta `libcap2-bin` |
+| `sudo not found` | Sin sudo; el resto del escaneo sigue |
+| SUID de sistema ocultos | Filtrado de ruido habitual |
 
 ---
 
-## Errores reales y solución
+## Problemas frecuentes
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `git: command not found` | Lab mínimo sin git | Usa `get-binsuid.sh`, no `git clone` |
-| `pip: command not found` | Sin pip | Usa `get-binsuid.sh` |
-| `externally-managed-environment` | Kali bloquea pip global | Usa `pipx` o `get-binsuid.sh` |
-| `hacker is not in the sudoers` | Sin sudo | Usa `get-binsuid.sh` (no necesita sudo) |
-| `binsuid: command not found` | PATH no actualizado | `source ~/.bashrc` o `export PATH="$HOME/bin:$PATH"` |
-| `No module named pip` | venv roto en PATH | `rm -rf ~/.local/venvs/binsuid` y usa `get-binsuid.sh` |
+| Error | Solución |
+|-------|----------|
+| `binsuid: command not found` | `source ~/.bashrc` |
+| `externally-managed-environment` | Usa `pipx` o `get-binsuid.sh` |
+| Sin Python en el objetivo | Usa `binsuid-scan.sh` |
 
 ---
 
-## Para instructores
-
-Pon esto en la descripción del lab o en el README del curso:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash && source ~/.bashrc && binsuid --scan-only
-```
-
-[English install guide](../README.md#install)
+English guide: [INSTALL.md](INSTALL.md)

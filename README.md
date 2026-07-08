@@ -4,14 +4,13 @@
 
 # bINsUID
 
-Automatic Linux privilege escalation for authorized labs and training.
-Scan SUID, capabilities, and sudo — then escalate with one command.
+Automatic Linux privilege escalation for authorized penetration testing, CTF, and security training.
 
-> Authorized testing and training only.
+Scans SUID/SGID binaries, capabilities, sudo rules, writable PATH, cron surfaces, and privileged groups — then escalates with built-in payloads and offline GTFOBins data.
 
-## Start here (any lab)
+> Use only on systems you are authorized to test.
 
-**One command.** Works without git or pip. Needs Linux + bash + (`curl` or `wget` on the install host). **Python 3 optional** — without it, `binsuid` runs a focused bash scanner (like linpeas, but only privesc vectors).
+## Quick start
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
@@ -19,44 +18,64 @@ source ~/.bashrc
 binsuid --scan-only
 ```
 
-**No Python on the target?** Copy or curl the bash scanner only:
-
-```bash
-# From Kali host into a minimal container:
-docker cp scripts/binsuid-scan.sh breach:/tmp/binsuid-scan.sh
-docker exec breach bash /tmp/binsuid-scan.sh --quick
-
-# Or one file from GitHub (needs curl/wget once):
-curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/binsuid-scan.sh | bash -s -- --quick
-```
-
-**Update later** (works from pip, .deb, or any old install; needs `curl` or `wget`):
+Update an existing install:
 
 ```bash
 binsuid --upgrade
-# or: curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash
-# or: wget -qO- https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash
 ```
 
-Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**  
-Lab handout for students: **[docs/LEEME-LAB.txt](docs/LEEME-LAB.txt)** (copy into your container's `LEEME.txt`)
+## Installation
+
+| Method | Command | Python | Notes |
+|--------|---------|--------|-------|
+| **Universal installer** | `curl -fsSL …/get-binsuid.sh \| bash` | Optional | Works on most Linux distros; bash-only fallback without Python |
+| **Kali / Debian package** | `sudo apt install binsuid` | System Python | After packaging is accepted in Kali |
+| **Release `.deb`** | `sudo dpkg -i binsuid_*_all.deb` | System Python | From [Releases](https://github.com/Cyberdark-Security/bINsUID/releases) |
+| **pipx** | `pipx install https://github.com/Cyberdark-Security/bINsUID.git` | Yes | Recommended on Kali when building from git |
+| **From source** | `pip install -e ".[dev]"` | Yes | Development |
+
+**Requirements on the target host:** Linux, bash, `find`. Optional: Python 3 (full auto-escalation), `getcap` (capabilities scan), passwordless `sudo -l` (sudo rules).
+
+Detailed guides:
+
+- English: [docs/INSTALL.md](docs/INSTALL.md)
+- Español: [docs/INSTALL.es.md](docs/INSTALL.es.md)
+
+### Bash-only scanner (no Python)
+
+If Python is not available, use the standalone bash scanner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/binsuid-scan.sh -o /tmp/binsuid-scan.sh
+bash /tmp/binsuid-scan.sh --quick
+```
+
+After the scan you can choose: **m** (menu), **a** (auto), or **q** (quit). Copy the script to restricted targets using your usual file-transfer method.
 
 ## Usage
 
 ```bash
-binsuid                  # scan, show target, confirm escalation (Y)
-binsuid --scan-only      # scan only
-binsuid --auto -y        # escalate immediately
-binsuid --auto --dry-run -y  # preview command only
+binsuid --scan-only              # enumerate vectors
+binsuid                          # guided escalation
+binsuid --auto -y                # escalate best target
+binsuid --auto --dry-run -y      # show command only
+binsuid --json --scan-only       # machine-readable output
 ```
 
-## What it does
+Bash scanner (no Python):
 
-- Finds SUID/SGID binaries, dangerous capabilities, sudo rules (incl. SETENV), writable PATH, cron surfaces, and privileged groups
-- **Highlights the lab target** (hides standard system SUID noise)
-- Suggests the next command (`binsuid --auto -y`)
-- Built-in payloads for 50+ binaries + PATH hijack detection
-- Offline GTFOBins data — no internet needed after download
+```bash
+binsuid-scan.sh --quick                  # scan, then prompt m/a/q
+binsuid-scan.sh --quick --scan-only      # scan only
+binsuid-scan.sh --quick --auto -y        # scan and auto-escalate
+```
+
+## Features
+
+- SUID/SGID, capabilities, sudo (incl. SETENV), writable PATH, cron, privileged groups
+- Ranks priority targets and hides common system noise
+- Built-in payloads for common binaries; offline GTFOBins database
+- JSON mode and scripting-friendly exit codes
 
 ## Scripting
 
@@ -65,43 +84,12 @@ binsuid --json --scan-only --quick   # exit 1 when auto-exploitable targets exis
 binsuid --scan-only --skip-sudo --skip-capabilities --quick
 ```
 
-## Requirements
+## Documentation
 
-| Required | Optional (warnings if missing) |
-|----------|--------------------------------|
-| Linux + bash + `find` | Python 3 (full scan + auto-escalate) |
-| curl or wget (install host) | `getcap` (capabilities scan) |
-| | passwordless `sudo -l` (sudo scan) |
-
-**Without Python:** `binsuid` / `binsuid-scan.sh` run bash recon only (SUID, SGID, sudo, caps, PATH, cron, groups).
-
-## Other install methods
-
-| Environment | Method |
-|-------------|--------|
-| Any minimal lab | [`scripts/get-binsuid.sh`](scripts/get-binsuid.sh) |
-| Kali / pipx | `pipx install https://github.com/Cyberdark-Security/bINsUID.git` |
-| Debian package | `sudo dpkg -i binsuid_*.deb` from [Releases](https://github.com/Cyberdark-Security/bINsUID/releases) |
-| No install, one-shot | `curl -sL …/main.tar.gz \| tar xz -C /tmp && cd /tmp/bINsUID-main && python3 -m binsuid` |
-
-Details: [docs/INSTALL.es.md](docs/INSTALL.es.md) (Spanish) · [scripts/](scripts/)
-
-## Example output
-
-```
-  Priority targets    : 1
-  System noise hidden : 18
-
-  >>> AUTO SUID /usr/local/bin/backup
-         -> Automatic PATH hijack (tar) via SUID
-
-  RECOMMENDED TARGET
-  Next step: binsuid --auto -y
-```
-
-## Kali Linux packaging
-
-See [packaging/KALI-SUBMISSION.md](packaging/KALI-SUBMISSION.md).
+- `man binsuid` — full option reference
+- [SECURITY.md](SECURITY.md) — reporting vulnerabilities
+- [CONTRIBUTING.md](CONTRIBUTING.md) — development
+- [packaging/KALI-SUBMISSION.md](packaging/KALI-SUBMISSION.md) — Kali packaging notes
 
 ## License
 

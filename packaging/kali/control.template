@@ -1,7 +1,7 @@
 Source: binsuid
 Section: utils
 Priority: optional
-Maintainer: Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>
+Maintainer: Cyberdark Security <ing.mauricio1983@gmail.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
 Standards-Version: 4.7.0
 Rules-Requires-Root: no

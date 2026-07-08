@@ -1,27 +1,18 @@
-binsuid (1.1.9-1) kali-dev; urgency=medium
+binsuid (1.2.2-1) kali-dev; urgency=medium
 
-  * Bash --auto and Python group auto-escalation (docker/lxd)
+  * Unified scan-then-choose flow; documentation and packaging sync
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 06:55:00 +0000
-
-binsuid (1.1.7-1) kali-dev; urgency=medium
-
-  * Color-coded bash scanner; CI test isolation fixes
-
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 05:00:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:00:00 +0000
 
 binsuid (1.1.6-1) kali-dev; urgency=medium
 
-  * Bash scanner v1.1.6 for minimal labs without Python
-  * Improved compatibility on restricted containers (WHOAMI Breach)
+  * Bash scanner for minimal environments without Python
+  * Improved compatibility on restricted containers
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 04:45:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Tue, 08 Jul 2026 04:45:00 +0000
 
 binsuid (1.1.0-1) kali-dev; urgency=medium
 
-  * Add SGID scan, writable PATH audit, cron persistence, and group hints
-  * Add SETENV sudo detection and automatic environment-based payloads
-  * Expand SUID/SUDO built-in payloads and PATH hijack detection
-  * JSON exit codes for scripting; update man page and packaging metadata
+  * Initial Kali packaging template
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Fri, 03 Jul 2026 20:00:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Mon, 07 Jul 2026 12:00:00 +0000

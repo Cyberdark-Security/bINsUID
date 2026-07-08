@@ -136,7 +136,7 @@ def print_guidance(finding: Finding, *, interactive: bool = False) -> None:
             print(paint("  Command preview:", ANSI_YELLOW))
             print(f"    {command}")
     else:
-        print(paint("  Next step: inspect this binary manually (custom SUID in lab path).", ANSI_YELLOW))
+        print(paint("  Next step: inspect this binary manually (non-standard SUID path).", ANSI_YELLOW))
     print()
 
 

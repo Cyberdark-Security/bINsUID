@@ -42,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
     parser.add_argument("--quick", action="store_true", help="Faster scan (common paths)")
-    parser.add_argument("--dry-run", action="store_true", help="Instructor demo - do not execute")
+    parser.add_argument("--dry-run", action="store_true", help="Show escalation command without executing")
     parser.add_argument("--no-color", action="store_true", help="Plain output without ANSI colors")
     parser.add_argument("--silent", action="store_true", help="Minimal output (summary line only)")
     parser.add_argument("--concise", action="store_true", help="Compact one-line-per-target listing")

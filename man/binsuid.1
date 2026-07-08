@@ -1,4 +1,4 @@
-.TH BINSUID 1 "July 2026" "binsuid 1.1.9" "User Commands"
+.TH BINSUID 1 "July 2026" "binsuid 1.2.2" "User Commands"
 .SH NAME
 binsuid \- automatic SUID, SGID, capabilities and sudo privilege escalation
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ binsuid \- automatic SUID, SGID, capabilities and sudo privilege escalation
 \fBbinsuid\fR scans Linux systems for exploitable SUID and SGID binaries, dangerous
 file and process capabilities, sudo misconfigurations (including SETENV rules),
 writable PATH directories, cron persistence surfaces, and privileged group
-membership. It ranks lab-relevant targets, then performs automatic privilege
+membership. It ranks priority targets, then performs automatic privilege
 escalation with built-in payloads. No manual command editing is required.
 .PP
 Intended for authorized penetration testing, CTF challenges, and security training.
@@ -45,7 +45,7 @@ Include low-interest system SUID binaries in listings.
 Disable ANSI color output.
 .TP
 .B \-\-dry-run
-Show escalation plan without executing.
+Show escalation command without executing.
 .TP
 .B \-\-skip-suid
 Skip SUID enumeration.
@@ -112,7 +112,7 @@ Scripting (exit 1 when targets exist):
 binsuid \-\-json \-\-scan-only \-\-quick
 .RE
 .PP
-Fast lab scan without sudo/capabilities:
+Quick scan without sudo/capabilities:
 .PP
 .RS
 binsuid \-\-scan-only \-\-quick \-\-skip-sudo \-\-skip-capabilities

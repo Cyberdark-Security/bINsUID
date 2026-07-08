@@ -4,6 +4,7 @@
 
 | Version | Supported |
 | ------- | --------- |
+| 1.2.x   | Yes       |
 | 1.1.x   | Yes       |
 | 1.0.x   | Yes       |
 
@@ -27,5 +28,5 @@ Do not run bINsUID on systems without explicit written permission.
 ## Safe defaults
 
 - Confirmation prompt before escalation (bypass with `-y` only when intended)
-- Dry-run mode (`--dry-run`) for classroom demonstrations
+- Dry-run mode (`--dry-run`) to preview commands without execution
 - JSON output (`--json --scan-only`) for automation without interactive prompts

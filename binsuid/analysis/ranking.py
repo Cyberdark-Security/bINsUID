@@ -1,4 +1,4 @@
-"""Rank and filter findings so lab targets stand out from system noise."""
+"""Rank and filter findings so priority targets stand out from system noise."""
 
 from __future__ import annotations
 
@@ -119,6 +119,6 @@ def best_candidate(findings: list[Finding]) -> Finding | None:
 
 
 def ranked_exploitable(findings: list[Finding]) -> list[Finding]:
-    """Exploitable findings ordered by lab priority (highest first)."""
+    """Exploitable findings ordered by priority (highest first)."""
     priority, _ = partition_findings(findings)
     return [f for f in priority if f.is_exploitable]

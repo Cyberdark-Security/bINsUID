@@ -1,7 +1,7 @@
 Source: binsuid
 Section: utils
 Priority: optional
-Maintainer: Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>
+Maintainer: Cyberdark Security <ing.mauricio1983@gmail.com>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
@@ -25,6 +25,6 @@ Description: automatic SUID, SGID, capabilities and sudo privilege escalation
  passwordless sudo rules (including SETENV), writable PATH directories,
  cron persistence surfaces, and privileged group membership.
  .
- Findings are ranked for lab relevance and matched against bundled offline
+ Findings are ranked by priority and matched against bundled offline
  GTFOBins data with built-in automatic payloads. Intended for authorized
  penetration testing, CTF challenges, and security training.

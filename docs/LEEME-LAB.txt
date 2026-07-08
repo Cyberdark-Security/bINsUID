@@ -1,81 +1,66 @@
 ================================================================================
-  LABORATORIO DE ESCALADA DE PRIVILEGIOS — bINsUID
+  EJERCICIO DE ESCALADA DE PRIVILEGIOS — bINsUID
 ================================================================================
 
-Objetivo: obtener root en esta máquina usando bINsUID.
-La herramienta detecta el entorno, escanea SUID / capabilities / sudo,
-muestra el objetivo del lab y puede escalar automáticamente.
+Objetivo: identificar vectores de escalada y obtener privilegios elevados
+en el sistema asignado usando bINsUID.
 
 --------------------------------------------------------------------------------
-PASO 1 — Instalar (copiar y pegar una sola vez)
+PASO 1 — Instalar
 --------------------------------------------------------------------------------
 
 curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/get-binsuid.sh | bash
 source ~/.bashrc
 
-(No necesitas git ni pip. Python 3 es opcional: sin él, binsuid hace recon en bash.)
+(Sin Python 3: el instalador deja disponible el escáner bash binsuid-scan.)
 
-¿Contenedor MÍNIMO (sin Python, sin curl, sin wget)? — hazlo desde Kali:
+Si el objetivo no tiene red, transfiere binsuid-scan.sh y ejecuta:
 
-  # Terminal 1: ya estás en devops@breach
-  # Terminal 2 en Kali (host):
-  curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/binsuid-scan.sh -o /tmp/binsuid-scan.sh
-  docker cp /tmp/binsuid-scan.sh breach:/tmp/binsuid-scan.sh
-
-  # Vuelve a devops@breach:
-  bash /tmp/binsuid-scan.sh --quick
-  # Tras el scan pregunta: m=menú, a=automático, q=salir
-  bash /tmp/binsuid-scan.sh --quick --auto -y   # sin preguntar, auto directo
-  bash /tmp/binsuid-scan.sh --quick --scan-only # solo recon, sin prompt
-
-  (Solo necesita bash + find dentro del lab. No instala nada.)
-
-  Alternativa sin docker cp — escaneo manual mínimo en breach:
-  find / -perm -4000 -type f 2>/dev/null
-  sudo -l
+  bash binsuid-scan.sh --quick
 
 --------------------------------------------------------------------------------
-PASO 2 — Escanear (ver qué hay en el sistema)
+PASO 2 — Escanear
 --------------------------------------------------------------------------------
 
 binsuid --scan-only
 
-Modo bash (sin Python): mismo comando — escanea SUID/SGID/sudo/caps/PATH/cron/grupos.
+o en modo bash:
 
-Verás:
-  - Objetivos prioritarios del lab (marcados con >>>)
-  - SUID, capabilities o sudo explotables
-  - Los binarios normales del sistema quedan ocultos (ruido)
+  bash binsuid-scan.sh --quick
+
+Verás objetivos prioritarios, vectores explotables y avisos si faltan herramientas.
 
 --------------------------------------------------------------------------------
-PASO 3 — Escalar a root
+PASO 3 — Escalar
 --------------------------------------------------------------------------------
 
-Opción A — Guiado (recomendado la primera vez):
+Guiado:
 
   binsuid
 
-  La herramienta muestra el objetivo y pregunta si quieres escalar. Pulsa Y.
-
-Opción B — Automático directo:
+Automático:
 
   binsuid --auto -y
 
-Opción C — Solo ver el comando sin ejecutar:
+Solo ver el comando:
 
   binsuid --auto --dry-run -y
 
---------------------------------------------------------------------------------
-AVISOS NORMALES (no son errores)
---------------------------------------------------------------------------------
+Modo bash (tras el escaneo elige m=menú, a=automático, q=salir):
 
-  getcap not found          → este lab no escanea capabilities (falta getcap)
-  sudo: password required   → tu usuario no tiene sudo libre
-
-El escaneo SUID sigue funcionando.
+  bash binsuid-scan.sh --quick
 
 --------------------------------------------------------------------------------
-RESUMEN RÁPIDO
+AVISOS NORMALES
+--------------------------------------------------------------------------------
+
+  getcap not found     → no se escanean capabilities
+  sudo not found       → no se escanean reglas sudo
+
+El escaneo de SUID y otros vectores sigue activo.
+
+--------------------------------------------------------------------------------
+RESUMEN
 --------------------------------------------------------------------------------
 
   Instalar:  curl -fsSL .../get-binsuid.sh | bash && source ~/.bashrc

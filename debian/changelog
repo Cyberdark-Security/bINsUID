@@ -1,23 +1,31 @@
+binsuid (1.2.2-1) kali-dev; urgency=medium
+
+  * Unified scan-then-choose flow in bash scanner (m/a/q prompt)
+  * Documentation rewrite: generic install guides (EN/ES), Kali packaging fixes
+  * Fix binsuid-scan.sh --help and --version handling
+
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 08:00:00 +0000
+
 binsuid (1.2.0-1) kali-dev; urgency=medium
 
   * Interactive escalation menu (--interactive) in bash scanner
   * Choose SUID, PATH, groups, sudo, caps, or auto mode
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 07:20:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 07:20:00 +0000
 
 binsuid (1.1.9-1) kali-dev; urgency=medium
 
   * Bash scanner --auto -y for docker/SUID/sudo without Python
   * Python auto-escalation for docker and lxd group membership
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 06:55:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 06:55:00 +0000
 
 binsuid (1.1.8-1) kali-dev; urgency=medium
 
   * Skip /dev, /proc, /sys and non-regular files in cron persistence scan
   * Confirm CI test isolation on Linux GitHub runners
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Wed, 08 Jul 2026 05:20:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Wed, 08 Jul 2026 05:20:00 +0000
 
 binsuid (1.1.7-1) kali-dev; urgency=medium
 
@@ -25,14 +33,14 @@ binsuid (1.1.7-1) kali-dev; urgency=medium
   * Fix CI tests isolated from runner groups and cron paths
   * Skip non-regular files in cron persistence scan
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 05:00:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Tue, 08 Jul 2026 05:00:00 +0000
 
 binsuid (1.1.6-1) kali-dev; urgency=medium
 
   * Rewrite binsuid-scan.sh for minimal containers (no set -e, broader paths)
   * Fix silent exit on find errors; add --debug flag for bash scanner
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Tue, 08 Jul 2026 04:45:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Tue, 08 Jul 2026 04:45:00 +0000
 
 binsuid (1.1.0-1) kali-dev; urgency=medium
 
@@ -41,10 +49,10 @@ binsuid (1.1.0-1) kali-dev; urgency=medium
   * Expand SUID/SUDO built-in payloads and PATH hijack detection
   * JSON exit codes for scripting; update man page and packaging metadata
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Fri, 03 Jul 2026 20:00:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Fri, 03 Jul 2026 20:00:00 +0000
 
 binsuid (1.0.0-1) kali-dev; urgency=medium
 
   * Initial release: automatic SUID, capabilities and sudo privilege escalation
 
- -- Cyberdark Security <https://github.com/Cyberdark-Security/bINsUID/issues>  Thu, 02 Jul 2026 12:00:00 +0000
+ -- Cyberdark Security <ing.mauricio1983@gmail.com>  Thu, 02 Jul 2026 12:00:00 +0000

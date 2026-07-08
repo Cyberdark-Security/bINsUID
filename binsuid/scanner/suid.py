@@ -7,7 +7,7 @@ from typing import Iterable
 from binsuid.models import Finding, VectorType
 from binsuid.utils import run_command
 
-# Paths scanned in quick mode (covers typical lab/CTF targets).
+# Paths scanned in quick mode (common custom binary locations).
 QUICK_SEARCH_PATHS = (
     "/usr/bin",
     "/usr/sbin",

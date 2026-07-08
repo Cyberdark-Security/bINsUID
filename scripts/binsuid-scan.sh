@@ -26,7 +26,6 @@ for arg in "$@"; do
     -y|--yes) ASSUME_YES=1; LAUNCH_SHELL=1 ;;
     --dry-run) DRY_RUN=1; AUTO=1 ;;
     --scan-only) SCAN_ONLY=1 ;;
-    --version|-V|-h|--help) ;;
     --json)
       echo "[-] --json needs python3 (binsuid --json --scan-only)." >&2
       exit 1
