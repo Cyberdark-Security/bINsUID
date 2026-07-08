@@ -4,7 +4,7 @@
 # Usage: binsuid-scan.sh [--quick] [--silent] [--no-color]
 set -euo pipefail
 
-VERSION="1.1.3"
+VERSION="1.1.4"
 QUICK=0
 SILENT=0
 NO_COLOR=0
@@ -58,17 +58,12 @@ done
 # Well-known SUID noise (matches binsuid/scanner/suid.py).
 is_known_suid() {
   case "$1" in
-    /usr/bin/sudo|/usr/bin/su|/usr/bin/passwd|/usr/bin/chfn|/usr/bin/chsh|
-    /usr/bin/newgrp|/usr/bin/gpasswd|/usr/bin/mount|/usr/bin/umount|
-    /usr/bin/pkexec|/bin/mount|/bin/umount|/bin/su) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-is_custom_path() {
-  case "$1" in
-    /opt/*|/usr/local/*|/home/*|/tmp/*|/var/tmp/*|/dev/shm/*) return 0 ;;
-    *) return 1 ;;
+    /usr/bin/sudo|/usr/bin/su|/usr/bin/passwd|/usr/bin/chfn|/usr/bin/chsh|/usr/bin/newgrp|/usr/bin/gpasswd|/usr/bin/mount|/usr/bin/umount|/usr/bin/pkexec|/bin/mount|/bin/umount|/bin/su)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
   esac
 }
 
@@ -87,9 +82,10 @@ scan_suid() {
     roots="/usr/bin /usr/sbin /usr/local/bin /usr/local/sbin /bin /sbin /opt /snap/bin"
     for root in $roots; do
       [ -d "$root" ] || continue
-      while IFS= read -r -d '' f; do
-        paths+="$f"$'\n'
-      done < <(find "$root" -xdev -type f -perm -4000 -print0 2>/dev/null)
+      found="$(find "$root" -xdev -type f -perm -4000 2>/dev/null)"
+      if [ -n "$found" ]; then
+        paths="${paths}${found}"$'\n'
+      fi
     done
   elif command -v find >/dev/null 2>&1; then
     paths="$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o \
@@ -103,12 +99,12 @@ scan_suid() {
     [ -n "$path" ] || continue
     if is_known_suid "$path"; then
       SUID_NOISE+=("$path")
-    elif is_custom_path "$path"; then
-      SUID_PRIORITY+=("$path")
     else
       SUID_PRIORITY+=("$path")
     fi
-  done <<< "$paths"
+  done <<EOF
+$paths
+EOF
 }
 
 scan_sgid() {
@@ -124,7 +120,9 @@ scan_sgid() {
   fi
   while IFS= read -r path; do
     [ -n "$path" ] && SGID_FOUND+=("$path")
-  done <<< "$paths"
+  done <<EOF
+$paths
+EOF
 }
 
 scan_capabilities() {
@@ -135,7 +133,9 @@ scan_capabilities() {
     [ -e "$root" ] || continue
     while IFS= read -r line; do
       [ -n "$line" ] && CAP_FOUND+=("$line")
-    done < <(getcap -r "$root" 2>/dev/null | grep -E 'cap_setuid|cap_setgid|cap_sys_admin|cap_dac_read_search|cap_setfcap' || true)
+    done <<EOF
+$(getcap -r "$root" 2>/dev/null | grep -E 'cap_setuid|cap_setgid|cap_sys_admin|cap_dac_read_search|cap_setfcap' || true)
+EOF
   done
 }
 
@@ -151,8 +151,9 @@ scan_sudo() {
 
 scan_path() {
   local d mode other
-  IFS=':' read -ra parts <<< "${PATH:-/usr/bin:/bin}"
-  for d in "${parts[@]}"; do
+  local old_ifs="$IFS"
+  IFS=':'
+  for d in ${PATH:-/usr/bin:/bin}; do
     [ -d "$d" ] || continue
     if [ -w "$d" ]; then
       PATH_FOUND+=("$d (writable)")
@@ -164,6 +165,7 @@ scan_path() {
       [ "$other" -ge 2 ] && PATH_FOUND+=("$d (world-writable)")
     fi
   done
+  IFS="$old_ifs"
 }
 
 scan_cron() {
@@ -183,7 +185,9 @@ scan_cron() {
       for script in $(echo "$line" | grep -oE '/[[:alnum:]_.~/-]+' || true); do
         [ -f "$script" ] && [ -w "$script" ] && CRON_FOUND+=("$script (writable, user crontab)")
       done
-    done < <(crontab -l 2>/dev/null || true)
+    done <<EOF
+$(crontab -l 2>/dev/null || true)
+EOF
   fi
 }
 
