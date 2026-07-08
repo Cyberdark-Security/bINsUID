@@ -16,7 +16,12 @@ def test_json_and_scan_only_can_be_combined():
 def test_version_flag():
     from binsuid import __version__
 
-    assert __version__ == "1.1.0"
+    assert __version__ == "1.1.1"
+
+
+def test_upgrade_flag_parses():
+    args = build_parser().parse_args(["--upgrade"])
+    assert args.upgrade
 
 
 def _exploitable_finding() -> Finding:

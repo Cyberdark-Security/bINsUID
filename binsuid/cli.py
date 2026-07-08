@@ -19,7 +19,11 @@ from binsuid.ui import (
     print_vulnerable_targets,
     prompt_target_choice,
 )
-from binsuid.utils import ANSI_CYAN, disable_color, paint
+from binsuid.utils import ANSI_CYAN, disable_color, paint, run_command
+
+UPGRADE_SCRIPT_URL = (
+    "https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh"
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -53,7 +57,34 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--skip-persistence", action="store_true", help="Skip cron persistence audit")
     parser.add_argument("--skip-groups", action="store_true", help="Skip privileged group hints")
     parser.add_argument("--sudo-interactive", action="store_true", help="Use sudo -l with password")
+    parser.add_argument(
+        "--upgrade",
+        action="store_true",
+        help="Update bINsUID to the latest release from GitHub",
+    )
     return parser
+
+
+def run_self_upgrade() -> int:
+    print(paint("[*] Updating bINsUID from GitHub...", ANSI_CYAN))
+    code, _, stderr = run_command(
+        f'curl -fsSL "{UPGRADE_SCRIPT_URL}" | bash',
+        shell=True,
+        timeout=180,
+    )
+    if code != 0:
+        print(
+            paint(
+                "[-] Upgrade failed. Try manually:\n"
+                f"    curl -fsSL {UPGRADE_SCRIPT_URL} | bash",
+                ANSI_CYAN,
+            ),
+            file=sys.stderr,
+        )
+        if stderr.strip():
+            print(stderr.strip(), file=sys.stderr)
+        return 1
+    return 0
 
 
 def _finding_to_dict(finding) -> dict:
@@ -133,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.no_color:
         disable_color()
+
+    if args.upgrade:
+        return run_self_upgrade()
 
     quiet = args.silent or args.json
 

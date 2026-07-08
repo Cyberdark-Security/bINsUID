@@ -19,6 +19,13 @@ source ~/.bashrc
 binsuid --scan-only
 ```
 
+**Update later** (works from pip, .deb, or any old install):
+
+```bash
+binsuid --upgrade
+# or: curl -fsSL https://raw.githubusercontent.com/Cyberdark-Security/bINsUID/main/scripts/upgrade-binsuid.sh | bash
+```
+
 Spanish guide by environment: **[docs/INSTALL.es.md](docs/INSTALL.es.md)**  
 Lab handout for students: **[docs/LEEME-LAB.txt](docs/LEEME-LAB.txt)** (copy into your container's `LEEME.txt`)
 

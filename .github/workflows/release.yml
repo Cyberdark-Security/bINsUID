@@ -21,11 +21,13 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install build tools
+      - name: Install nfpm
         run: |
-          pip install -e ".[dev]" build
-          sudo apt-get update
-          sudo apt-get install -y nfpm
+          curl -fsSL https://github.com/goreleaser/nfpm/releases/download/v2.41.2/nfpm_2.41.2_amd64.deb -o /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - name: Install package and test deps
+        run: pip install -e ".[dev]" build
 
       - name: Run tests
         run: pytest -v
