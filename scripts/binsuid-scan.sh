@@ -2,9 +2,9 @@
 # bINsUID bash scanner — focused privesc recon without Python.
 # Same vectors as binsuid (SUID/SGID/caps/sudo/PATH/cron/groups), no auto-exploit.
 # Usage: binsuid-scan.sh [--quick] [--silent] [--no-color]
-set -euo pipefail
+set -uo pipefail
 
-VERSION="1.1.4"
+VERSION="1.1.5"
 QUICK=0
 SILENT=0
 NO_COLOR=0
@@ -82,14 +82,14 @@ scan_suid() {
     roots="/usr/bin /usr/sbin /usr/local/bin /usr/local/sbin /bin /sbin /opt /snap/bin"
     for root in $roots; do
       [ -d "$root" ] || continue
-      found="$(find "$root" -xdev -type f -perm -4000 2>/dev/null)"
+      found="$(find "$root" -xdev -type f -perm -4000 2>/dev/null || true)"
       if [ -n "$found" ]; then
         paths="${paths}${found}"$'\n'
       fi
     done
   elif command -v find >/dev/null 2>&1; then
     paths="$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o \
-      -type f -perm -4000 -print 2>/dev/null)"
+      -type f -perm -4000 -print 2>/dev/null || true)"
   else
     ERRORS+=("find not found")
     return
@@ -112,11 +112,11 @@ scan_sgid() {
   if [ "$QUICK" -eq 1 ]; then
     for root in /usr/bin /usr/sbin /usr/local/bin /opt /bin /sbin; do
       [ -d "$root" ] || continue
-      paths+="$(find "$root" -xdev -type f -perm -2000 2>/dev/null)"$'\n'
+      paths+="$(find "$root" -xdev -type f -perm -2000 2>/dev/null || true)"$'\n'
     done
   elif command -v find >/dev/null 2>&1; then
     paths="$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o \
-      -type f -perm -2000 -print 2>/dev/null)"
+      -type f -perm -2000 -print 2>/dev/null || true)"
   fi
   while IFS= read -r path; do
     [ -n "$path" ] && SGID_FOUND+=("$path")
@@ -193,7 +193,8 @@ EOF
 
 scan_groups() {
   local groups g hint
-  groups="$(id -Gn 2>/dev/null | tr '[:upper:]' '[:lower:]')" || return
+  groups="$(id -Gn 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
+  [ -n "$groups" ] || return 0
   for g in docker lxd disk adm sudo wheel; do
     echo " $groups " | grep -q " $g " || continue
     case "$g" in
@@ -220,13 +221,13 @@ PRIORITY_COUNT=$((${#SUID_PRIORITY[@]} + ${#SGID_FOUND[@]} + ${#CAP_FOUND[@]} + 
 
 if [ "$SILENT" -eq 1 ]; then
   echo "Priority findings: $PRIORITY_COUNT | SUID: ${#SUID_PRIORITY[@]} | SGID: ${#SGID_FOUND[@]} | Mode: bash"
-  exit 0
+  [ "$PRIORITY_COUNT" -gt 0 ] && exit 1 || exit 0
 fi
 
 echo -e "${CYAN}==============================================${RESET}"
 echo -e "${BOLD}  bINsUID scan (bash mode $VERSION)${RESET}"
 echo -e "${CYAN}==============================================${RESET}"
-echo -e "${YELLOW}  No Python — recon only. Install python3 for auto-escalation.${RESET}"
+echo -e "${YELLOW}  No Python — recon only.${RESET}"
 echo
 
 if [ ${#SUID_PRIORITY[@]} -gt 0 ]; then
